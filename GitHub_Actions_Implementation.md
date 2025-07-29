@@ -195,7 +195,8 @@ jobs:
         name: workflow-logs
         path: |
           *.log
-          fitness_data_*.json
+          # Note: fitness_data_*.json files are now created in /tmp directory
+          # and automatically cleaned up by the tempfile module
           validation_result_*.json
     
     - name: Cleanup sensitive files
@@ -275,7 +276,19 @@ jobs:
 
 ### Step 4: Monitoring and Notifications
 
-#### 4.1 Workflow Notifications
+#### 4.1 Enhanced Push Notifications
+The workflow now includes enhanced push notifications with iteration count information:
+
+**Features:**
+- **Iteration tracking**: Shows number of feedback loops completed
+- **Smart messaging**: Different messages for single vs. multiple iterations
+- **Transparency**: Users know how much AI refinement occurred
+
+**Example Messages:**
+- Single iteration: "Your report has been sent successfully"
+- Multiple iterations: "Your report has been sent successfully after 3 feedback loops"
+
+#### 4.2 Workflow Notifications
 Add to your workflow:
 
 ```yaml
@@ -483,6 +496,42 @@ LANGSMITH_PROJECT=your_langsmith_project
 Place `credentials.json` and `token.json` in project root:
 - `credentials.json` - OAuth2.0 client credentials
 - `token.json` - Generated access token
+
+### Tempfile Implementation
+
+#### Overview
+The workflow now uses Python's `tempfile` module for temporary file management, ensuring compatibility with GitHub Actions and other CI/CD environments.
+
+#### Key Features
+- **Automatic cleanup**: Temporary files are automatically removed after use
+- **System temp directory**: Files are created in `/tmp` (Linux) or equivalent system directories
+- **GitHub Actions compatible**: No files created in repository root directory
+- **Error handling**: Robust cleanup even if exceptions occur
+
+#### Implementation Details
+```python
+# Example from orchestrated_workflow_with_feedback.py
+import tempfile
+import json
+
+with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
+    json.dump(email_data, temp_file, indent=2)
+    temp_file_path = temp_file.name
+
+# Use temp_file_path for validation
+result = validate_fitness_data_tool.invoke({
+    "new_data_file": temp_file_path
+})
+
+# Clean up temporary file
+os.unlink(temp_file_path)
+```
+
+#### Benefits for GitHub Actions
+- **No file conflicts**: Multiple workflow runs won't interfere with each other
+- **Automatic cleanup**: No manual cleanup required in workflow YAML
+- **Security**: Temporary files are isolated from repository
+- **Reliability**: Works consistently across different environments
 
 ### Testing the Setup
 
