@@ -31,18 +31,13 @@ class EvaluateEmailBodyAgent:
             # Prepare the evaluation prompt
             prompt = f"""You are a quality control personnel evaluating a fitness update email. Please evaluate the following email body based on these criteria:
 
-1. **Greeting**: Must be pleasant and courteous and addressed to the Coach (e.g., "Hi Coach,")
-2. **Week Comparison**: Must have a very good comparison of the two weeks (first and last weeks data)
-3. **Online Link**: Must include the link "https://viewonlyfitnessreport.vercel.app/" only once and not repeated
+1. **Greeting**: Please check if the greeting is present. 
+2. **Week Comparison**: Must be for two weeks (first and last weeks data). Please be lenient with this. As long as there is some comparison. This criteria is met. 
+3. **Online Link**: Must include the link "https://viewonlyfitnessreport.vercel.app/" only once and not repeated. Sometimes this can be twice like [https://viewonlyfitnessreport.vercel.app/](https://viewonlyfitnessreport.vercel.app/). In this case give feedback to correct it to https://viewonlyfitnessreport.vercel.app/ and make sure there is no brackets etc around the link. If it is stated like [this link](https://viewonlyfitnessreport.vercel.app/), then again give feedback that it must show only like https://viewonlyfitnessreport.vercel.app/. This is very important. 
 4. **Signature**: Must have appropriate signature section
 
 
-Reference structure from image, Please only use as a guide and do not be very strict about it. You don't have to be exact, the whole idea is the email must not be bad:
-- Greeting: "Hi Imran,"
-- First paragraph: Latest week's progress with specific metrics
-- Second paragraph: Overall progress and motivation with comparison
-- Information section: Online report link and attached reports mention
-- Signature: "Warm Regards, Charles Parmar, #nevergiveup" (each on new line)
+
 
 Email body to evaluate:
 {email_body}

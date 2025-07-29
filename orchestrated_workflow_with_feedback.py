@@ -159,21 +159,21 @@ def create_orchestrated_workflow_with_feedback():
         if reconciliation_result and not reconciliation_result.get('data_exists') and email_data:
             print("🔄 Starting data validation process...")
             
-            # Create a temporary file with the email data
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            new_data_file = f"fitness_data_{timestamp}.json"
+            # Create a temporary file with the email data using tempfile
+            import tempfile
+            import json
             
             try:
-                with open(new_data_file, 'w') as f:
-                    import json
-                    json.dump(email_data, f, indent=2)
+                with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
+                    json.dump(email_data, temp_file, indent=2)
+                    temp_file_path = temp_file.name
                 
                 result = validate_fitness_data_tool.invoke({
-                    "new_data_file": new_data_file
+                    "new_data_file": temp_file_path
                 })
                 
                 # Clean up temporary file
-                os.remove(new_data_file)
+                os.unlink(temp_file_path)
                 
                 return {
                     **state,
@@ -182,6 +182,12 @@ def create_orchestrated_workflow_with_feedback():
                 
             except Exception as e:
                 print(f"❌ Error in validation: {e}")
+                # Clean up temp file if it exists
+                try:
+                    if 'temp_file_path' in locals():
+                        os.unlink(temp_file_path)
+                except:
+                    pass
                 return state
         else:
             print("❌ Validation skipped - data already exists or reconciliation failed")

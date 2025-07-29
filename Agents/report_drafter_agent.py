@@ -245,8 +245,16 @@ class ReportDrafterAgent:
 - The email should be written in a way that is easy to read and follow.
 - The email must have a section which is asking for feedback on my progress and next steps
 - Please always and always recommend to view the report online at the following link "https://viewonlyfitnessreport.vercel.app/" and also suggest that the report can be extracted from the site by visiting the url at any time. Please also politely point out that the reports are also attached to the email.
+- Please only include the link once and make sure it is not repeated anywhere else in the email.
 - The entire response should ONLY be the email body text, without any extra greetings or sign-offs like "Best," or your name.
 - End the message with the following "Warm Regards, Charles Parmar, #nevergiveup" and add these one below the other as an email signature.
+
+Reference structure from image, Please only use as a guide and do not be very strict about it. You don't have to be exact, the whole idea is the email must not be bad:
+- Greeting: "Hi Imran,"
+- First paragraph: Latest week's progress with specific metrics
+- Second paragraph: Overall progress and motivation with comparison
+- Information section: Online report link and attached reports mention
+- Signature: "Warm Regards, Charles Parmar, #nevergiveup" (each on new line)
 
 {f"Previous feedback to address: {feedback}" if feedback else ""}
 

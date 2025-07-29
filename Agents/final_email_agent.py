@@ -280,10 +280,12 @@ class FinalEmailAgent:
                 pushover_user_key = os.getenv("PUSHOVER_USER_KEY")
                 
                 if pushover_token and pushover_user_key:
+                    # Create message with iteration count
+                    iteration_text = f" after {iteration_count} feedback loop{'s' if iteration_count > 1 else ''}" if iteration_count > 1 else ""
                     pushover_data = {
                         "token": pushover_token,
                         "user": pushover_user_key,
-                        "message": "Your report has been sent successfully",
+                        "message": f"Your report has been sent successfully{iteration_text}",
                         "title": "Fitness Report Sent",
                         "priority": 0,
                         "sound": "pushover"
@@ -297,7 +299,8 @@ class FinalEmailAgent:
                     if response.status_code == 200:
                         result = response.json()
                         if result.get("status") == 1:
-                            print("✅ Push notification sent: Your report has been sent successfully")
+                            iteration_text = f" after {iteration_count} feedback loop{'s' if iteration_count > 1 else ''}" if iteration_count > 1 else ""
+                            print(f"✅ Push notification sent: Your report has been sent successfully{iteration_text}")
                         else:
                             print(f"❌ Failed to send push notification: {result.get('errors', 'Unknown error')}")
                     else:
