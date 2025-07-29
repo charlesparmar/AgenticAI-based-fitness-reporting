@@ -1,0 +1,25 @@
+langgraph>=0.2.0
+langchain>=0.2.0
+langchain-openai>=0.1.0
+python-dotenv>=1.0.0
+# Notification dependencies
+requests>=2.31.0
+schedule>=1.2.0
+plyer>=2.1.0
+# Gmail API dependencies (updated for Gmail API integration)
+google-auth>=2.23.0
+google-auth-oauthlib>=1.1.0
+google-auth-httplib2>=0.1.1
+google-api-python-client>=2.100.0
+# Excel and data processing dependencies
+pandas>=2.0.0
+openpyxl>=3.1.0
+# New agent dependencies
+openai>=1.0.0
+selenium>=4.15.0
+sqlitecloud>=0.0.84
+# MCP Server dependencies for Brave browser
+mcp>=1.0.0
+websockets>=11.0.0
+aiohttp>=3.8.0
+asyncio-mqtt>=0.16.0 
