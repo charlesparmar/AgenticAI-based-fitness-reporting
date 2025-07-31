@@ -20,7 +20,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from selenium.webdriver.common.keys import Keys
-from langchain_openai import ChatOpenAI
+
+# Import new modular components
+from config.llm_config import llm_config
+from utils.prompt_loader import prompt_loader
 
 # Load environment variables
 load_dotenv()
@@ -86,12 +89,8 @@ class ReportDrafterAgent:
         # Email configuration
         self.email_to = os.getenv("EMAIL_TO", "coach@example.com")
         
-        # OpenAI configuration using LangChain
-        self.llm = ChatOpenAI(
-            model="gpt-4o-mini",
-            temperature=0.7,
-            api_key=os.getenv("OPENAI_API_KEY")
-        )
+        # LLM configuration using modular system
+        self.llm = llm_config.get_model(temperature=0.7)
         
         # Pushover notifier
         self.notifier = PushoverNotifier()
@@ -226,42 +225,25 @@ class ReportDrafterAgent:
                 connection.close()
     
     def create_email_body(self, baseline_data: Dict[str, Any], current_data: Dict[str, Any], feedback: str = "") -> str:
-        """Create email body using OpenAI GPT-4o-mini"""
+        """Create email body using configured LLM"""
         try:
             print("✍️ Generating email body with LLM...")
             
-            # Prepare the prompt
-            prompt = f"""You are Charles Parmar, a fitness enthusiast, writing a weekly update to your personal coach.
-- Write a concise and friendly email body based on the provided data.
-- All weights are in kilograms (kg) and measurements are in inches (in). Refer to them as such.
-- Start the email by addressing the coach, for example, "Hi Coach,".
-- Write in the first person (e.g., "This week, my weight was...", "I've seen a change of...").
-- Summarize the latest week's key metrics from the 'actual data'.
-- Briefly mention the overall trend by comparing the first week's data to the last week's data. Highlight key changes like total weight change.
-- Keep the tone positive and forward-looking.
-- The email should be 1-2 paragraphs long.
-- The email should be written in a way that is easy to understand and follow.
-- The email should be written in a way that is easy to read and follow.
-- The email should be written in a way that is easy to read and follow.
-- The email must have a section which is asking for feedback on my progress and next steps
-- Please always and always recommend to view the report online at the following link "https://viewonlyfitnessreport.vercel.app/" and also suggest that the report can be extracted from the site by visiting the url at any time. Please also politely point out that the reports are also attached to the email.
-- Please only include the link once and make sure it is not repeated anywhere else in the email.
-- The entire response should ONLY be the email body text, without any extra greetings or sign-offs like "Best," or your name.
-- End the message with the following "Warm Regards, Charles Parmar, #nevergiveup" and add these one below the other as an email signature.
-
-Reference structure from image, Please only use as a guide and do not be very strict about it. You don't have to be exact, the whole idea is the email must not be bad:
-- Greeting: "Hi Imran,"
-- First paragraph: Latest week's progress with specific metrics
-- Second paragraph: Overall progress and motivation with comparison
-- Information section: Online report link and attached reports mention
-- Signature: "Warm Regards, Charles Parmar, #nevergiveup" (each on new line)
-
-{f"Previous feedback to address: {feedback}" if feedback else ""}
-
-First week's data (baseline): {json.dumps(baseline_data, indent=2)}
-Last week's data (current): {json.dumps(current_data, indent=2)}"""
+            # Prepare feedback section
+            feedback_section = f"Previous feedback to address: {feedback}" if feedback else ""
             
-            # Make API call to OpenAI using LangChain
+            # Get the model for this specific prompt
+            model = prompt_loader.get_model_for_prompt("report_drafting_prompt", temperature=0.7)
+            
+            # Load and format the prompt
+            prompt = prompt_loader.format_prompt(
+                "report_drafting_prompt",
+                feedback_section=feedback_section,
+                baseline_data=json.dumps(baseline_data, indent=2),
+                current_data=json.dumps(current_data, indent=2)
+            )
+            
+            # Make API call using LangChain
             from langchain_core.messages import HumanMessage, SystemMessage
             
             messages = [
@@ -269,7 +251,7 @@ Last week's data (current): {json.dumps(current_data, indent=2)}"""
                 HumanMessage(content=prompt)
             ]
             
-            response = self.llm.invoke(messages)
+            response = model.invoke(messages)
             
             email_body = response.content.strip()
             print("✅ Email body generated successfully")

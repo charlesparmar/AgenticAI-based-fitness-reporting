@@ -1,0 +1,14 @@
+# Model Configuration for Prompts
+# This file maps each prompt to a specific model
+# Update the model assignments below to change which model is used for each prompt
+
+# Model Definitions:
+# Model 1 = gpt-4o-mini
+# Model 2 = claude-3-5-sonnet-20241022
+# Model 3 = gemini-1.5-flash
+
+# Prompt to Model Mappings:
+email_evaluation_prompt = Model 1
+validation_prompt = Model 2
+report_drafting_prompt = Model 3
+reconciliation_prompt = Model 1

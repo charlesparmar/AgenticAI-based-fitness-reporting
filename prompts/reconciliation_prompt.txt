@@ -1,0 +1,21 @@
+You are an expert in reconciling two sets of fitness data.
+Compare these two fitness data entries and determine if they are EXACTLY the same data.
+
+NEW DATA:
+{new_data}
+
+DATABASE DATA:
+{db_data}
+
+IMPORTANT: Ignore data format differences (integers vs floats, e.g., 119 vs 119.0 are the same).
+Focus ONLY on the numerical values of the key measurements: weight, fat_percentage, bmi, and all body measurements.
+Ignore timestamps, IDs, email metadata, and data format differences as these will naturally be different.
+
+Compare the actual numerical values only. For example:
+- Weight: 119 and 119.0 are the SAME
+- Fat Percentage: 0.42 and 0.42 are the SAME
+- BMI: 38 and 38.0 are the SAME
+
+Respond with ONLY "SAME" if the fitness measurements values are numerically the same, or "DIFFERENT" if there are any differences in the actual fitness data values.
+
+Please provide an accurate response based on comparison of the numerical values only for two sets of data. 

@@ -33,9 +33,11 @@ from Agents.supabase_agent import run_supabase_agent
 from Agents.report_drafter_agent import run_report_drafter_agent
 from Agents.evaluate_email_body_agent import run_evaluate_email_body_agent
 from Agents.cleanup_agent import run_cleanup_agent
+from Agents.model_config_validation_agent import run_model_config_validation_agent
 
 # State for the orchestrated workflow with feedback
 class WorkflowState(TypedDict):
+    model_config_validation_result: Dict[str, Any]
     email_data: Dict[str, Any]
     database_data: Dict[str, Any]
     reconciliation_result: Dict[str, Any]
@@ -52,6 +54,15 @@ class WorkflowState(TypedDict):
     timestamp: str
 
 # Tools for the orchestrated workflow
+@tool
+def model_config_validation_tool() -> Dict[str, Any]:
+    """Validate model configuration before workflow execution"""
+    success = run_model_config_validation_agent()
+    return {
+        "success": success,
+        "timestamp": datetime.now().isoformat()
+    }
+
 @tool
 def fetch_email_tool(email_address: str, app_password: str) -> Dict[str, Any]:
     """Fetch latest fitness email and create JSON"""
@@ -101,13 +112,33 @@ def cleanup_tool() -> Dict[str, Any]:
     result = run_cleanup_agent()
     return result
 
-def create_orchestrated_workflow_with_feedback():
+def create_reporting_workflow():
     """Create the orchestrated workflow with feedback loop using LangGraph"""
     
     # Create the graph
     workflow = StateGraph(WorkflowState)
     
     # Define node functions
+    def model_config_validation_node(state):
+        """Model configuration validation node - runs first"""
+        print("🔍 Starting model configuration validation...")
+        
+        result = model_config_validation_tool.invoke({})
+        
+        if not result.get('success'):
+            print("❌ Model configuration validation failed - terminating workflow")
+            return {
+                **state,
+                "model_config_validation_result": result,
+                "error": "Model configuration validation failed"
+            }
+        
+        print("✅ Model configuration validation passed")
+        return {
+            **state,
+            "model_config_validation_result": result
+        }
+    
     def fetch_email_node(state):
         """Fetch email node"""
         email_address = os.getenv("GMAIL_ADDRESS")
@@ -417,6 +448,7 @@ def create_orchestrated_workflow_with_feedback():
         return state
     
     # Add nodes
+    workflow.add_node("model_config_validation", model_config_validation_node)
     workflow.add_node("fetch_email", fetch_email_node)
     workflow.add_node("fetch_database", fetch_database_node)
     workflow.add_node("reconcile_data", reconcile_data_node)
@@ -431,9 +463,18 @@ def create_orchestrated_workflow_with_feedback():
     workflow.add_node("end_workflow", end_workflow_node)
     
     # Set entry point
-    workflow.set_entry_point("fetch_email")
+    workflow.set_entry_point("model_config_validation")
     
-    # Add edges
+    # Add edges with conditional logic for model config validation
+    workflow.add_conditional_edges(
+        "model_config_validation",
+        lambda x: "end_workflow" if x.get("error") else "fetch_email",
+        {
+            "fetch_email": "fetch_email",
+            "end_workflow": "end_workflow"
+        }
+    )
+    
     workflow.add_edge("fetch_email", "fetch_database")
     workflow.add_edge("fetch_database", "reconcile_data")
     workflow.add_edge("reconcile_data", "validate_data")
@@ -465,7 +506,7 @@ def create_orchestrated_workflow_with_feedback():
     
     return app
 
-def run_orchestrated_workflow_with_feedback():
+def run_reporting_workflow():
     """Run the complete orchestrated workflow with feedback loop"""
     print("🤖 Running Orchestrated Fitness Data Workflow with Feedback Loop")
     print("=" * 70)
@@ -478,23 +519,25 @@ def run_orchestrated_workflow_with_feedback():
         print("❌ Gmail credentials not found")
         return
     
-    print(f"📧 Step 1: Fetching fitness email from {email_address}")
-    print(f"🗄️ Step 2: Fetching latest database entry")
-    print(f"🔄 Step 3: Reconciling data with LLM")
-    print(f"🔍 Step 4: Validating data against historical trends")
-    print(f"📱 Step 5: Entering data into Supabase")
-    print(f"📝 Step 6: Drafting email report (with feedback loop)")
-    print(f"🔍 Step 7: Evaluating email body quality")
-    print(f"📤 Step 8: Sending final email via Final Email Agent (if approved)")
-    print(f"🧹 Step 9: Post-cleanup (clean up resources)")
+    print(f"🔍 Step 1: Validating model configuration")
+    print(f"📧 Step 2: Fetching fitness email from {email_address}")
+    print(f"🗄️ Step 3: Fetching latest database entry")
+    print(f"🔄 Step 4: Reconciling data with LLM")
+    print(f"🔍 Step 5: Validating data against historical trends")
+    print(f"📱 Step 6: Entering data into Supabase")
+    print(f"📝 Step 7: Drafting email report (with feedback loop)")
+    print(f"🔍 Step 8: Evaluating email body quality")
+    print(f"📤 Step 9: Sending final email via Final Email Agent (if approved)")
+    print(f"🧹 Step 10: Post-cleanup (clean up resources)")
     print("-" * 70)
     
     try:
         # Create and run the LangGraph workflow
-        app = create_orchestrated_workflow_with_feedback()
+        app = create_reporting_workflow()
         
         # Initialize state
         initial_state = {
+            "model_config_validation_result": {},
             "email_data": {},
             "database_data": {},
             "reconciliation_result": {},
@@ -513,6 +556,7 @@ def run_orchestrated_workflow_with_feedback():
         
         # Run the workflow
         result = app.invoke({
+            "model_config_validation_result": {},
             "email_data": {},
             "database_data": {},
             "reconciliation_result": {},
@@ -652,4 +696,4 @@ def run_orchestrated_workflow_with_feedback():
         traceback.print_exc()
 
 if __name__ == "__main__":
-    run_orchestrated_workflow_with_feedback() 
+    run_reporting_workflow() 

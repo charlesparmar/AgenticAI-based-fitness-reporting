@@ -394,13 +394,13 @@ LANGSMITH_PROJECT=your_langsmith_project
 source venv/bin/activate
 
 # Run workflow
-python orchestrated_workflow_with_feedback.py
+python reporting_workflow.py
 ```
 
 #### Scheduled Execution
 ```bash
 # Using cron (Linux/macOS)
-0 9 * * * cd /path/to/project && source venv/bin/activate && python orchestrated_workflow_with_feedback.py
+0 9 * * * cd /path/to/project && source venv/bin/activate && python reporting_workflow.py
 
 # Using Windows Task Scheduler
 # Create scheduled task to run the workflow script
@@ -464,7 +464,7 @@ jobs:
         echo "LANGSMITH_PROJECT=${{ secrets.LANGSMITH_PROJECT }}" >> $GITHUB_ENV
     
     - name: Run fitness reporting workflow
-      run: python orchestrated_workflow_with_feedback.py
+      run: python reporting_workflow.py
     
     - name: Cleanup sensitive files
       if: always()
@@ -666,7 +666,7 @@ Solution: Optimize Excel file size
 export DEBUG=true
 
 # Run with verbose output
-python orchestrated_workflow_with_feedback.py --verbose
+python reporting_workflow.py --verbose
 ```
 
 #### Manual Testing

@@ -70,7 +70,7 @@ cp env.example .env
 # Edit .env with your service credentials
 
 # Run the workflow
-python orchestrated_workflow_with_feedback.py
+python reporting_workflow.py
 ```
 
 ### GitHub Actions Deployment

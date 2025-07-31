@@ -5,7 +5,10 @@ import sqlitecloud
 from typing import Dict, Any, Optional
 from datetime import datetime
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
+
+# Import new modular components
+from config.llm_config import llm_config
+from utils.prompt_loader import prompt_loader
 
 # Load environment variables
 load_dotenv()
@@ -67,39 +70,17 @@ class ReconciliationAgent:
         return self.notifier.send_notification(message, title, priority=0, sound="pushover")
     
     def compare_data_with_llm(self, new_data: Dict[str, Any], db_data: Dict[str, Any]) -> bool:
-        """Compare new data with database data using GPT-4o-mini"""
+        """Compare new data with database data using configured LLM"""
         try:
-            # Initialize the model
-            model = ChatOpenAI(
-                model="gpt-4o-mini",
-                temperature=0,
-                api_key=os.getenv("OPENAI_API_KEY")
+            # Get the model for this specific prompt
+            model = prompt_loader.get_model_for_prompt("reconciliation_prompt", temperature=0)
+            
+            # Load and format comparison prompt
+            comparison_prompt = prompt_loader.format_prompt(
+                "reconciliation_prompt",
+                new_data=json.dumps(new_data, indent=2),
+                db_data=json.dumps(db_data, indent=2)
             )
-            
-            # Create comparison prompt
-            comparison_prompt = f"""
-            You are an expert in reconciling two sets of fitness data.
-            Compare these two fitness data entries and determine if they are EXACTLY the same data.
-            
-            NEW DATA:
-            {json.dumps(new_data, indent=2)}
-            
-            DATABASE DATA:
-            {json.dumps(db_data, indent=2)}
-            
-            IMPORTANT: Ignore data format differences (integers vs floats, e.g., 119 vs 119.0 are the same).
-            Focus ONLY on the numerical values of the key measurements: weight, fat_percentage, bmi, and all body measurements.
-            Ignore timestamps, IDs, email metadata, and data format differences as these will naturally be different.
-            
-            Compare the actual numerical values only. For example:
-            - Weight: 119 and 119.0 are the SAME
-            - Fat Percentage: 0.42 and 0.42 are the SAME
-            - BMI: 38 and 38.0 are the SAME
-            
-            Respond with ONLY "SAME" if the fitness measurements values are numerically the same, or "DIFFERENT" if there are any differences in the actual fitness data values.
-
-            Please provide an accurate response based on comparison of the numerical values only for two sets of data.
-            """
             
             # Get model response
             response = model.invoke(comparison_prompt)

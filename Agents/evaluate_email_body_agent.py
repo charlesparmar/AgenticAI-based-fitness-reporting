@@ -3,8 +3,11 @@ import json
 from typing import Dict, Any, Optional
 from datetime import datetime
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
+
+# Import new modular components
+from config.llm_config import llm_config
+from utils.prompt_loader import prompt_loader
 
 # Load environment variables
 load_dotenv()
@@ -13,48 +16,24 @@ class EvaluateEmailBodyAgent:
     """Agent for evaluating email body quality and providing feedback"""
     
     def __init__(self):
-        # OpenAI configuration using LangChain
-        self.llm = ChatOpenAI(
-            model="gpt-4o-mini",
-            temperature=0.3,
-            api_key=os.getenv("OPENAI_API_KEY")
-        )
-        
-        if not os.getenv("OPENAI_API_KEY"):
-            raise ValueError("OPENAI_API_KEY must be set in .env file")
+        # LLM configuration using modular system
+        self.llm = llm_config.get_model(temperature=0.3)
     
     def evaluate_email_body(self, email_body: str, baseline_data: Dict[str, Any], current_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Evaluate email body quality using OpenAI GPT-4o-mini"""
+        """Evaluate email body quality using configured LLM"""
         try:
             print("🔍 Evaluating email body quality...")
             
-            # Prepare the evaluation prompt
-            prompt = f"""You are a quality control personnel evaluating a fitness update email. Please evaluate the following email body based on these criteria:
-
-1. **Greeting**: Please check if the greeting is present. 
-2. **Week Comparison**: Must be for two weeks (first and last weeks data). Please be lenient with this. As long as there is some comparison. This criteria is met. 
-3. **Online Link**: Must include the link "https://viewonlyfitnessreport.vercel.app/" only once and not repeated. Sometimes this can be twice like [https://viewonlyfitnessreport.vercel.app/](https://viewonlyfitnessreport.vercel.app/). In this case give feedback to correct it to https://viewonlyfitnessreport.vercel.app/ and make sure there is no brackets etc around the link. If it is stated like [this link](https://viewonlyfitnessreport.vercel.app/), then again give feedback that it must show only like https://viewonlyfitnessreport.vercel.app/. This is very important. 
-4. **Signature**: Must have appropriate signature section
-
-
-
-
-Email body to evaluate:
-{email_body}
-
-First week's data (baseline): {json.dumps(baseline_data, indent=2)}
-Last week's data (current): {json.dumps(current_data, indent=2)}
-
-Please provide your evaluation in the following JSON format:
-{{
-    "approved": true/false,
-    "feedback": "Detailed feedback on what needs to be improved (if not approved)",
-    "score": 1-10,
-    "issues": ["list of specific issues found"],
-    "strengths": ["list of strengths"]
-}}
-
-If approved, set "approved" to true and provide positive feedback. If not approved, set "approved" to false and provide specific feedback on what needs to be changed."""
+            # Get the model for this specific prompt
+            model = prompt_loader.get_model_for_prompt("email_evaluation_prompt", temperature=0.3)
+            
+            # Load and format the evaluation prompt
+            prompt = prompt_loader.format_prompt(
+                "email_evaluation_prompt",
+                email_body=email_body,
+                baseline_data=json.dumps(baseline_data, indent=2),
+                current_data=json.dumps(current_data, indent=2)
+            )
             
             # Make API call to OpenAI using LangChain
             messages = [
@@ -62,7 +41,7 @@ If approved, set "approved" to true and provide positive feedback. If not approv
                 HumanMessage(content=prompt)
             ]
             
-            response = self.llm.invoke(messages)
+            response = model.invoke(messages)
             
             evaluation_text = response.content.strip()
             

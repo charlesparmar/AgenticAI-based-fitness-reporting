@@ -1,0 +1,48 @@
+You are an expert email evaluator specializing in fitness progress reports. Your task is to evaluate the quality and effectiveness of a fitness progress email.
+
+EMAIL BODY TO EVALUATE:
+{email_body}
+
+BASELINE DATA (First week):
+{baseline_data}
+
+CURRENT DATA (Latest week):
+{current_data}
+
+EVALUATION CRITERIA:
+1. **Clarity and Readability** (0-10): Is the email clear, well-structured, and easy to read?
+2. **Data Accuracy** (0-10): Does the email accurately represent the fitness data provided?
+3. **Progress Communication** (0-10): Does it effectively communicate progress and changes?
+4. **Tone and Motivation** (0-10): Is the tone appropriate, positive, and motivating?
+5. **Action Items** (0-10): Does it include clear next steps or feedback requests?
+6. **Professionalism** (0-10): Is the email professional and well-formatted?
+
+SCORING GUIDELINES:
+- 9-10: Excellent - No improvements needed
+- 7-8: Good - Minor improvements possible
+- 5-6: Acceptable - Some improvements needed
+- 3-4: Needs work - Significant improvements required
+- 1-2: Poor - Major revisions needed
+
+RESPONSE FORMAT (JSON):
+{{
+    "approved": true/false,
+    "score": 0-60 (sum of all criteria scores),
+    "feedback": "Detailed feedback explaining the score and specific improvements needed",
+    "criteria_scores": {{
+        "clarity_readability": 0-10,
+        "data_accuracy": 0-10,
+        "progress_communication": 0-10,
+        "tone_motivation": 0-10,
+        "action_items": 0-10,
+        "professionalism": 0-10
+    }},
+    "specific_issues": ["list of specific issues found"],
+    "suggestions": ["list of specific improvement suggestions"]
+}}
+
+APPROVAL THRESHOLD:
+- Approve if total score >= 45 (75% or higher)
+- Reject if total score < 45
+
+Provide your evaluation in valid JSON format only. 

@@ -5,11 +5,14 @@ import requests
 import sqlitecloud
 from typing import Dict, Any, List, Optional
 from datetime import datetime
-from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
 from dotenv import load_dotenv
+
+# Import new modular components
+from config.llm_config import llm_config
+from utils.prompt_loader import prompt_loader
 
 # Load environment variables
 load_dotenv()
@@ -76,18 +79,44 @@ class DataValidationAgent:
             print(f"❌ Error fetching historical data: {e}")
             return None
     
+    def _remove_week_number_field(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Remove 'Week Number' field from fitness data"""
+        if isinstance(data, dict):
+            cleaned_data = data.copy()
+            # Remove Week Number from measurements if it exists
+            if 'fitness_data' in cleaned_data and 'measurements' in cleaned_data['fitness_data']:
+                if 'Week Number' in cleaned_data['fitness_data']['measurements']:
+                    del cleaned_data['fitness_data']['measurements']['Week Number']
+                    print("🗑️ Removed 'Week Number' field from fitness data")
+            return cleaned_data
+        return data
+    
+    def _remove_week_number_from_historical_data(self, historical_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Remove 'Week Number' field from historical data"""
+        cleaned_historical_data = []
+        for entry in historical_data:
+            cleaned_entry = entry.copy()
+            if 'Week Number' in cleaned_entry:
+                del cleaned_entry['Week Number']
+            cleaned_historical_data.append(cleaned_entry)
+        
+        if historical_data and 'Week Number' in historical_data[0]:
+            print("🗑️ Removed 'Week Number' field from historical data")
+        
+        return cleaned_historical_data
+
     def analyze_trends(self, new_data: Dict[str, Any], historical_data: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Analyze trends using GPT-4o-mini with historical data"""
+        """Analyze trends using configured LLM with historical data"""
         try:
-            # Initialize the model
-            model = ChatOpenAI(
-                model="gpt-4o-mini",
-                temperature=0,
-                api_key=os.getenv("OPENAI_API_KEY")
-            )
+            # Get the model for this specific prompt
+            model = prompt_loader.get_model_for_prompt("validation_prompt", temperature=0)
             
-            # Prepare data for analysis
-            analysis_prompt = self._create_analysis_prompt(new_data, historical_data)
+            # Load and format analysis prompt
+            analysis_prompt = prompt_loader.format_prompt(
+                "validation_prompt",
+                new_data=json.dumps(new_data, indent=2),
+                historical_data=json.dumps(historical_data, indent=2)
+            )
             
             # Get model response
             response = model.invoke(analysis_prompt)
@@ -105,111 +134,9 @@ class DataValidationAgent:
                 "confidence": 0.0
             }
     
-    def analyze_single_data_point(self, new_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Analyze single data point using GPT-4o-mini without historical data"""
-        try:
-            # Initialize the model
-            model = ChatOpenAI(
-                model="gpt-4o-mini",
-                temperature=0,
-                api_key=os.getenv("OPENAI_API_KEY")
-            )
-            
-            # Prepare data for analysis
-            analysis_prompt = self._create_single_data_analysis_prompt(new_data)
-            
-            # Get model response
-            response = model.invoke(analysis_prompt)
-            
-            # Parse the response
-            analysis_result = self._parse_analysis_response(response.content)
-            
-            return analysis_result
-            
-        except Exception as e:
-            print(f"❌ Error analyzing single data point: {e}")
-            return {
-                "validation_status": "Validation Failed",
-                "reason": f"Analysis error: {e}",
-                "confidence": 0.0
-            }
+
     
-    def _create_analysis_prompt(self, new_data: Dict[str, Any], historical_data: List[Dict[str, Any]]) -> str:
-        """Create analysis prompt for the LLM"""
-        
-        prompt = f"""
-You are a fitness data validation expert. Analyze the new fitness data against historical trends.
 
-IMPORTANT: Ignore week numbers and dates when comparing data. Focus only on the actual fitness measurements and body metrics.
-
-HISTORICAL DATA (Last 4 entries):
-{json.dumps(historical_data, indent=2)}
-
-NEW DATA TO VALIDATE:
-{json.dumps(new_data, indent=2)}
-
-ANALYSIS TASK:
-1. Compare the new data with historical trends (IGNORE week numbers and focus only on weight metrics and body measurements)
-2. Check if measurements are within reasonable ranges
-3. Look for any anomalies or sudden changes in body measurements
-4. Determine if the data follows expected patterns for fitness progress
-
-VALIDATION CRITERIA:
-- Weight changes should be gradual (not more than 5kg in one entry)
-- Body measurements should be consistent and allow for some variation
-- Fat percentage should follow logical patterns but allow for some variation
-- All measurements should be within humanly possible ranges but allow for some variation
-- Focus on: weight, fat_percentage, bmi, body measurements (neck, shoulders, biceps, etc.)
-- IGNORE: week numbers, dates, and any metadata fields
-
-RESPONSE FORMAT (JSON):
-{{
-    "validation_status": "Validation Success" or "Validation Failed",
-    "reason": "Detailed explanation of the validation result (focus on measurements, not week numbers)",
-    "confidence": 0.0 to 1.0,
-    "anomalies": ["list of any anomalies found in measurements only"],
-    "trend_analysis": "Brief trend analysis of fitness measurements"
-}}
-
-Provide your analysis in valid JSON format only.
-"""
-        return prompt
-    
-    def _create_single_data_analysis_prompt(self, new_data: Dict[str, Any]) -> str:
-        """Create analysis prompt for single data point without historical data"""
-        
-        prompt = f"""
-You are a fitness data validation expert. Analyze the new fitness data for reasonableness and potential issues.
-
-NEW DATA TO VALIDATE:
-{json.dumps(new_data, indent=2)}
-
-ANALYSIS TASK:
-1. Check if measurements are within reasonable human ranges
-2. Look for any obvious anomalies or impossible values
-3. Verify data consistency within the entry
-4. Assess the overall quality and plausibility of the data
-
-VALIDATION CRITERIA:
-- Weight should be between 30-300 kg (reasonable human range)
-- Body measurements should be proportional and realistic
-- Fat percentage should be between 2-50% (reasonable range)
-- All measurements should be positive numbers
-- BMI should be calculated correctly (weight in kg / height in m²)
-- Measurements should be consistent (e.g., waist should be smaller than hips)
-
-RESPONSE FORMAT (JSON):
-{{
-    "validation_status": "Validation Success" or "Validation Failed",
-    "reason": "Detailed explanation of the validation result",
-    "confidence": 0.0 to 1.0,
-    "anomalies": ["list of any anomalies found"],
-    "data_quality": "Assessment of data quality"
-}}
-
-Provide your analysis in valid JSON format only.
-"""
-        return prompt
     
     def _parse_analysis_response(self, response: str) -> Dict[str, Any]:
         """Parse the LLM analysis response"""
@@ -352,18 +279,27 @@ Provide your analysis in valid JSON format only.
             with open(new_data_file, 'r') as f:
                 new_data = json.load(f)
             
+            # Clean new data by removing 'Week Number'
+            cleaned_new_data = self._remove_week_number_field(new_data)
+            
             # Fetch historical data
             historical_data = self.fetch_historical_data()
             
             if not historical_data:
-                print("⚠️ No historical data available, using LLM analysis for single data point")
-                validation_result = self.analyze_single_data_point(new_data)
+                print("❌ No historical data available for trend analysis. Validation requires historical data.")
+                validation_result = {
+                    "validation_status": "Validation Failed",
+                    "reason": "No historical data available for trend analysis",
+                    "confidence": 0.0
+                }
             else:
+                # Clean historical data by removing 'Week Number'
+                cleaned_historical_data = self._remove_week_number_from_historical_data(historical_data)
                 # Analyze trends with historical data
-                validation_result = self.analyze_trends(new_data, historical_data)
+                validation_result = self.analyze_trends(cleaned_new_data, cleaned_historical_data)
             
             # Send notification
-            notification_sent = self.send_pushover_notification(validation_result, new_data)
+            notification_sent = self.send_pushover_notification(validation_result, cleaned_new_data)
             
             # Prepare validation data
             validation_data = {
@@ -412,12 +348,8 @@ def validate_fitness_data_tool(new_data_file: str) -> Dict[str, Any]:
 def create_data_validation_agent():
     """Create the data validation agent using LangGraph"""
     
-    # Initialize the model
-    model = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.7,
-        api_key=os.getenv("OPENAI_API_KEY")
-    )
+    # Initialize the model using centralized configuration
+    model = llm_config.get_model(temperature=0.7)
     
     # Create the graph
     workflow = StateGraph(ValidationState)

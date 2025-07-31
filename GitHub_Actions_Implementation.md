@@ -64,7 +64,7 @@ fitness-reporting/
 │   ├── report_drafter_agent.py
 │   └── supabase_agent.py
 ├── requirements.txt
-├── orchestrated_workflow_with_feedback.py
+├── reporting_workflow.py
 ├── credentials.json
 ├── token.json
 ├── README.md
@@ -186,7 +186,7 @@ jobs:
     
     - name: Run fitness reporting workflow
       run: |
-        python orchestrated_workflow_with_feedback.py
+        python reporting_workflow.py
     
     - name: Upload workflow logs
       uses: actions/upload-artifact@v3
@@ -265,7 +265,7 @@ jobs:
           echo "Running in test mode"
           python -c "print('Test mode - workflow would run here')"
         else
-          python orchestrated_workflow_with_feedback.py
+          python reporting_workflow.py
         fi
     
     - name: Cleanup sensitive files
@@ -550,7 +550,7 @@ python -c "import json; json.load(open('credentials.json')); print('Gmail creden
 #### 2. Test Complete Workflow
 ```bash
 # Run the workflow manually
-python orchestrated_workflow_with_feedback.py
+python reporting_workflow.py
 ```
 
 ## Security Best Practices
