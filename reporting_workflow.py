@@ -25,15 +25,127 @@ from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
+from google_auth_oauthlib.flow import InstalledAppFlow
 from Agents.fetcher_agent1_latestemail import run_latest_email_fetcher
 from Agents.fetcher_agent2_database import run_database_fetcher
 from Agents.recon_agent import run_reconciliation_agent
 from Agents.data_validation_agent import DataValidationAgent
-from Agents.supabase_agent import run_supabase_agent
+from Agents.supabase_api_agent import run_supabase_api_agent
 from Agents.report_drafter_agent import run_report_drafter_agent
 from Agents.evaluate_email_body_agent import run_evaluate_email_body_agent
 from Agents.cleanup_agent import run_cleanup_agent
 from Agents.model_config_validation_agent import run_model_config_validation_agent
+
+# Gmail API scopes required for the fitness reporting system
+GMAIL_SCOPES = [
+    'https://www.googleapis.com/auth/gmail.modify',
+    'https://www.googleapis.com/auth/gmail.send',
+    'https://www.googleapis.com/auth/gmail.compose'
+]
+
+def check_and_refresh_gmail_token():
+    """Check if Gmail token is valid, refresh if needed"""
+    try:
+        print("🔍 Checking Gmail token status...")
+        
+        # Check if token.json exists
+        token_path = "token.json"
+        if not os.path.exists(token_path):
+            print("❌ token.json not found!")
+            print("Please run refresh_gmail_token.py first to create your token.")
+            return False
+        
+        # Load existing token
+        creds = Credentials.from_authorized_user_file(token_path, GMAIL_SCOPES)
+        
+        # Check if token is expired or will expire soon (within 5 minutes)
+        if creds.expired:
+            print("🔄 Gmail token is expired, refreshing...")
+            return refresh_gmail_token(creds)
+        elif creds.expiry and (creds.expiry - datetime.now()).total_seconds() < 300:
+            print("🔄 Gmail token expires soon (within 5 minutes), refreshing...")
+            return refresh_gmail_token(creds)
+        else:
+            time_until_expiry = (creds.expiry - datetime.now()).total_seconds() if creds.expiry else None
+            if time_until_expiry:
+                minutes_left = int(time_until_expiry / 60)
+                print(f"✅ Gmail token is valid (expires in {minutes_left} minutes)")
+            else:
+                print("✅ Gmail token is valid")
+            return True
+            
+    except Exception as e:
+        print(f"❌ Token check failed: {e}")
+        return False
+
+def refresh_gmail_token(creds=None):
+    """Refresh Gmail token with correct scopes"""
+    try:
+        # Check if credentials.json exists
+        credentials_path = "credentials.json"
+        if not os.path.exists(credentials_path):
+            print(f"❌ Error: {credentials_path} not found!")
+            print("Please download your Gmail API credentials from Google Cloud Console.")
+            return False
+        
+        # If no creds provided, try to load from file
+        if not creds:
+            token_path = "token.json"
+            if os.path.exists(token_path):
+                creds = Credentials.from_authorized_user_file(token_path, GMAIL_SCOPES)
+        
+        # If there are no (valid) credentials available, let the user log in
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                print("🔄 Refreshing expired token...")
+                try:
+                    creds.refresh(Request())
+                except Exception as e:
+                    print(f"❌ Failed to refresh token: {e}")
+                    print("🔄 Starting new authentication flow...")
+                    creds = None
+            
+            if not creds:
+                print("🔄 Starting new authentication flow...")
+                print("📋 Required scopes:")
+                for scope in GMAIL_SCOPES:
+                    print(f"   • {scope}")
+                print()
+                
+                # Create flow instance
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    credentials_path, GMAIL_SCOPES)
+                
+                # Run the local server for OAuth2 authentication
+                print("🌐 Opening browser for authentication...")
+                print("Please complete the authentication in your browser.")
+                print("The server will automatically close after authentication.")
+                print()
+                
+                creds = flow.run_local_server(port=0)
+        
+        # Save the credentials for the next run
+        print("💾 Saving new token to token.json...")
+        with open("token.json", 'w') as token:
+            token.write(creds.to_json())
+        
+        print("✅ Token successfully refreshed and saved!")
+        
+        # Verify scopes
+        print("🔍 Verifying scopes:")
+        for scope in GMAIL_SCOPES:
+            if scope in creds.scopes:
+                print(f"   ✅ {scope}")
+            else:
+                print(f"   ❌ {scope} (MISSING)")
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error refreshing token: {e}")
+        return False
 
 # State for the orchestrated workflow with feedback
 class WorkflowState(TypedDict):
@@ -90,8 +202,8 @@ def validate_fitness_data_tool(new_data_file: str) -> Dict[str, Any]:
 
 @tool
 def supabase_entry_tool(new_email_data: Dict[str, Any]) -> Dict[str, Any]:
-    """Enter fitness data into Supabase application"""
-    result = run_supabase_agent(new_email_data)
+    """Enter fitness data into Supabase application via REST API"""
+    result = run_supabase_api_agent(new_email_data)
     return result
 
 @tool
@@ -510,6 +622,12 @@ def run_reporting_workflow():
     """Run the complete orchestrated workflow with feedback loop"""
     print("🤖 Running Orchestrated Fitness Data Workflow with Feedback Loop")
     print("=" * 70)
+    
+    # Step 0: Check and refresh Gmail token if needed
+    print("🔍 Step 0: Checking Gmail token status...")
+    if not check_and_refresh_gmail_token():
+        print("❌ Gmail token check/refresh failed. Please check your credentials.")
+        return
     
     # Check credentials
     email_address = os.getenv("GMAIL_ADDRESS")

@@ -27,10 +27,10 @@ from .data_validation_agent import (
     validate_fitness_data_tool
 )
 
-# Import supabase agent
-from .supabase_agent import (
-    SupabaseAgent,
-    run_supabase_agent
+# Import supabase API agent
+from .supabase_api_agent import (
+    SupabaseAPIAgent,
+    run_supabase_api_agent
 )
 
 # Import report drafter agent
@@ -56,8 +56,8 @@ __all__ = [
     'create_data_validation_agent',
     'run_data_validation_agent',
     'validate_fitness_data_tool',
-    'SupabaseAgent',
-    'run_supabase_agent',
+    'SupabaseAPIAgent',
+    'run_supabase_api_agent',
     'ReportDrafterAgent',
     'run_report_drafter_agent',
     'EvaluateEmailBodyAgent',
