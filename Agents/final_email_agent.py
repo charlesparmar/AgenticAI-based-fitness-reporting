@@ -25,6 +25,15 @@ import tempfile
 # Load environment variables
 load_dotenv()
 
+# Import email configuration
+try:
+    from config.email_config import email_config, get_email_to, get_email_cc, get_email_bcc
+except ImportError:
+    print("⚠️ Warning: Email configuration module not found, using fallback configuration")
+    def get_email_to(): return os.getenv('EMAIL_TO', 'coach@example.com')
+    def get_email_cc(): return []
+    def get_email_bcc(): return []
+
 # Gmail API scopes
 SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
 
@@ -78,7 +87,11 @@ class FinalEmailAgent:
         self.credentials_path = os.getenv('GMAIL_API_CREDENTIALS_PATH', 'credentials.json')
         self.token_path = os.getenv('GMAIL_API_TOKEN_PATH', 'token.json')
         self.email_address = os.getenv('GMAIL_ADDRESS')
-        self.coach_email = os.getenv('EMAIL_TO', 'coach@example.com')
+        
+        # Use new email configuration system
+        self.coach_email = get_email_to()
+        self.cc_recipients = get_email_cc()
+        self.subject_prefix = email_config.get_subject_prefix() if hasattr(email_config, 'get_subject_prefix') else 'Charles Parmar : Progress Report'
         
         if not self.email_address:
             raise ValueError("GMAIL_ADDRESS not found in environment variables")
@@ -199,13 +212,17 @@ class FinalEmailAgent:
             print(f"❌ Error creating final email body: {e}")
             return original_body
     
-    def create_message_with_attachment(self, to_email, subject, body, attachment_path=None):
-        """Create a Gmail message with optional attachment"""
+    def create_message_with_attachment(self, to_email, subject, body, attachment_path=None, cc_emails=None):
+        """Create a Gmail message with optional attachment and CC"""
         try:
             message = MIMEMultipart()
             message['to'] = to_email
             message['from'] = self.email_address
             message['subject'] = subject
+            
+            # Add CC recipients if provided
+            if cc_emails:
+                message['cc'] = ', '.join(cc_emails)
             
             # Add body
             text_part = MIMEText(body, 'plain')
@@ -238,7 +255,7 @@ class FinalEmailAgent:
         try:
             # Get current date for subject
             current_date = datetime.now().strftime("%d/%m/%Y")
-            subject = f"Progress Report : Charles Parmar : {current_date}"
+            subject = f"Charles Parmar : Progress Report : {current_date}"
             
             # Create final email body
             original_body = email_body_data.get('email_body', '')
@@ -254,7 +271,8 @@ class FinalEmailAgent:
                 to_email=self.coach_email,
                 subject=subject,
                 body=final_body,
-                attachment_path=excel_path
+                attachment_path=excel_path,
+                cc_emails=self.cc_recipients
             )
             
             # Send the message
@@ -270,6 +288,8 @@ class FinalEmailAgent:
             
             print(f"✅ Final email sent successfully!")
             print(f"   To: {self.coach_email}")
+            if self.cc_recipients:
+                print(f"   CC: {', '.join(self.cc_recipients)}")
             print(f"   Subject: {subject}")
             print(f"   Message ID: {sent_message['id']}")
             print(f"   Excel attachment: {'Yes' if excel_path else 'No'}")
@@ -314,6 +334,7 @@ class FinalEmailAgent:
                 'success': True,
                 'message_id': sent_message['id'],
                 'to_email': self.coach_email,
+                'cc_emails': self.cc_recipients,
                 'subject': subject,
                 'excel_attached': excel_path is not None,
                 'timestamp': datetime.now().isoformat()

@@ -1,0 +1,29 @@
+{
+  "recipients": [
+    {
+      "email": "coach@example.com",
+      "name": "Primary Coach",
+      "role": "coach",
+      "active": true
+    },
+    {
+      "email": "assistant@example.com",
+      "name": "Assistant Coach",
+      "role": "cc",
+      "active": true
+    },
+    {
+      "email": "nutritionist@example.com",
+      "name": "Nutrition Specialist",
+      "role": "cc",
+      "active": false
+    }
+  ],
+  "config": {
+    "primary_recipient": "coach@example.com",
+    "cc_recipients": ["assistant@example.com"],
+    "subject_prefix": "Charles Parmar : Progress Report",
+    "reply_to": null,
+    "send_notifications": true
+  }
+}

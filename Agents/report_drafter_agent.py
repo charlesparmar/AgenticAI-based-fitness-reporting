@@ -86,8 +86,12 @@ class ReportDrafterAgent:
         self.gmail_address = os.getenv("GMAIL_ADDRESS")
         self.gmail_app_password = os.getenv("GMAIL_APP_PASSWORD")
         
-        # Email configuration
-        self.email_to = os.getenv("EMAIL_TO", "coach@example.com")
+        # Email configuration - use new flexible system
+        try:
+            from config.email_config import get_email_to
+            self.email_to = get_email_to()
+        except ImportError:
+            self.email_to = os.getenv("EMAIL_TO", "coach@example.com")
         
         # LLM configuration using modular system
         self.llm = llm_config.get_model(temperature=0.7)

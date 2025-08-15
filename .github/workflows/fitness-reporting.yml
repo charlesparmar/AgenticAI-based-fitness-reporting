@@ -1,0 +1,202 @@
+name: Fitness Reporting Workflow
+
+on:
+  # Scheduled runs - configurable via cron
+  schedule:
+    # Default: Run daily at 5:00 PM London time (UTC+0/UTC+1)
+    # You can modify this cron expression to change frequency
+    # Examples:
+    # - cron: '0 17 * * *'    # Daily at 5:00 PM London time
+    # - cron: '0 17 * * 1-5'  # Weekdays only at 5:00 PM London time
+    # - cron: '0 9,17 * * *'  # Twice daily at 9:00 AM and 5:00 PM London time
+    # - cron: '0 17 * * 1'    # Every Monday at 5:00 PM London time
+    # - cron: '0 17 1,15 * *' # 1st and 15th of each month at 5:00 PM London time
+    # - cron: '0 */6 * * *'   # Every 6 hours
+    # - cron: '0 9-18/2 * * 1-5' # Every 2 hours during business hours (9 AM - 6 PM London time, weekdays)
+    - cron: '0 17 * * *'
+  
+  # Manual trigger with inputs
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Run in test mode (skip actual email sending)'
+        required: false
+        default: false
+        type: boolean
+      custom_email_to:
+        description: 'Override primary email recipient for this run'
+        required: false
+        default: ''
+        type: string
+      custom_email_cc:
+        description: 'Override CC recipients for this run (comma-separated)'
+        required: false
+        default: ''
+        type: string
+      skip_notifications:
+        description: 'Skip push notifications for this run'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  # Set environment to production for scheduled runs
+  ENVIRONMENT: production
+  # Enable LangSmith tracing
+  LANGCHAIN_TRACING_V2: true
+  LANGCHAIN_PROJECT: Charles-Fitness-report
+  LANGCHAIN_ENDPOINT: https://api.smith.langchain.com
+
+jobs:
+  fitness-reporting:
+    name: Fitness Reporting
+    runs-on: ubuntu-latest
+    
+    # Add timeout to prevent hanging jobs
+    timeout-minutes: 30
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y chromium-browser chromium-chromedriver
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Create credentials files
+      run: |
+        # Create credentials.json from secret
+        echo '${{ secrets.GMAIL_CREDENTIALS }}' > credentials.json
+        
+        # Create token.json from secret
+        echo '${{ secrets.GMAIL_TOKEN }}' > token.json
+        
+        # Verify files exist and have content
+        ls -la credentials.json token.json
+        echo "Credentials file size: $(wc -c < credentials.json) bytes"
+        echo "Token file size: $(wc -c < token.json) bytes"
+    
+    - name: Set environment variables
+      run: |
+        # Core configuration
+        echo "GMAIL_ADDRESS=${{ secrets.GMAIL_ADDRESS }}" >> $GITHUB_ENV
+        echo "GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD }}" >> $GITHUB_ENV
+        echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
+        echo "SUPABASE_EMAIL=${{ secrets.SUPABASE_EMAIL }}" >> $GITHUB_ENV
+        echo "SUPABASE_PASSWORD=${{ secrets.SUPABASE_PASSWORD }}" >> $GITHUB_ENV
+        echo "PUSHOVER_USER_KEY=${{ secrets.PUSHOVER_USER_KEY }}" >> $GITHUB_ENV
+        echo "PUSHOVER_TOKEN=${{ secrets.PUSHOVER_TOKEN }}" >> $GITHUB_ENV
+        echo "SQLITE_API_KEY=${{ secrets.SQLITE_API_KEY }}" >> $GITHUB_ENV
+        echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> $GITHUB_ENV
+        echo "LANGSMITH_API_KEY=${{ secrets.LANGSMITH_API_KEY }}" >> $GITHUB_ENV
+        echo "LANGSMITH_PROJECT=${{ secrets.LANGSMITH_PROJECT }}" >> $GITHUB_ENV
+        
+        # Email configuration - use secrets or workflow inputs
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.custom_email_to }}" ]; then
+          echo "EMAIL_TO=${{ github.event.inputs.custom_email_to }}" >> $GITHUB_ENV
+        else
+          echo "EMAIL_TO=${{ secrets.EMAIL_TO }}" >> $GITHUB_ENV
+        fi
+        
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.custom_email_cc }}" ]; then
+          echo "EMAIL_CC=${{ github.event.inputs.custom_email_cc }}" >> $GITHUB_ENV
+        else
+          echo "EMAIL_CC=${{ secrets.EMAIL_CC }}" >> $GITHUB_ENV
+        fi
+        
+
+        echo "EMAIL_SUBJECT_PREFIX=${{ secrets.EMAIL_SUBJECT_PREFIX }}" >> $GITHUB_ENV
+        
+        # Handle notifications
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.skip_notifications }}" = "true" ]; then
+          echo "EMAIL_SEND_NOTIFICATIONS=false" >> $GITHUB_ENV
+        else
+          echo "EMAIL_SEND_NOTIFICATIONS=${{ secrets.EMAIL_SEND_NOTIFICATIONS }}" >> $GITHUB_ENV
+        fi
+        
+        # Test mode configuration
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.test_mode }}" = "true" ]; then
+          echo "TEST_MODE=true" >> $GITHUB_ENV
+          echo "EMAIL_SEND_NOTIFICATIONS=false" >> $GITHUB_ENV
+        else
+          echo "TEST_MODE=false" >> $GITHUB_ENV
+        fi
+    
+    - name: Display configuration
+      run: |
+        echo "🔧 Workflow Configuration:"
+        echo "=========================="
+        echo "Event Type: ${{ github.event_name }}"
+        echo "Environment: ${{ env.ENVIRONMENT }}"
+        echo "Test Mode: ${{ env.TEST_MODE }}"
+        echo "Primary Email: ${{ env.EMAIL_TO }}"
+        echo "CC Emails: ${{ env.EMAIL_CC }}"
+        echo "Send Notifications: ${{ env.EMAIL_SEND_NOTIFICATIONS }}"
+        echo "Subject Prefix: ${{ env.EMAIL_SUBJECT_PREFIX }}"
+        
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo ""
+          echo "📝 Manual Run Parameters:"
+          echo "Test Mode: ${{ github.event.inputs.test_mode }}"
+          echo "Custom Email To: ${{ github.event.inputs.custom_email_to }}"
+          echo "Custom Email CC: ${{ github.event.inputs.custom_email_cc }}"
+          echo "Skip Notifications: ${{ github.event.inputs.skip_notifications }}"
+        fi
+    
+    - name: Run fitness reporting workflow
+      run: |
+        echo "🚀 Starting fitness reporting workflow..."
+        
+        # Set Python path
+        export PYTHONPATH="${PYTHONPATH}:${PWD}"
+        
+        # Run the workflow
+        python3 reporting_workflow.py
+        
+        echo "✅ Fitness reporting workflow completed"
+    
+    - name: Upload workflow logs
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: workflow-logs-${{ github.run_id }}
+        path: |
+          *.log
+          validation_result_*.json
+          fitness_data_*.json
+          *.xlsx
+        retention-days: 7
+    
+    - name: Cleanup sensitive files
+      if: always()
+      run: |
+        rm -f credentials.json token.json
+        echo "✅ Sensitive files cleaned up"
+    
+    - name: Workflow summary
+      if: always()
+      run: |
+        echo "📊 Workflow Summary:"
+        echo "==================="
+        echo "Repository: ${{ github.repository }}"
+        echo "Run ID: ${{ github.run_id }}"
+        echo "Event: ${{ github.event_name }}"
+        echo "Status: ${{ job.status }}"
+        echo "Duration: ${{ steps.fitness-reporting.outputs.duration }}"
+        
+        if [ "${{ job.status }}" = "success" ]; then
+          echo "✅ Workflow completed successfully"
+        else
+          echo "❌ Workflow failed or was cancelled"
+        fi
