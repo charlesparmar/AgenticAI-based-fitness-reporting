@@ -99,6 +99,8 @@ jobs:
         echo "PUSHOVER_TOKEN=${{ secrets.PUSHOVER_TOKEN }}" >> $GITHUB_ENV
         echo "SQLITE_API_KEY=${{ secrets.SQLITE_API_KEY }}" >> $GITHUB_ENV
         echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> $GITHUB_ENV
+        echo "SUPABASE_API_URL=${{ secrets.SUPABASE_API_URL }}" >> $GITHUB_ENV
+        echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> $GITHUB_ENV
         echo "LANGSMITH_API_KEY=${{ secrets.LANGSMITH_API_KEY }}" >> $GITHUB_ENV
         echo "LANGSMITH_PROJECT=${{ secrets.LANGSMITH_PROJECT }}" >> $GITHUB_ENV
         

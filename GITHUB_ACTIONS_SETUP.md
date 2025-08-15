@@ -64,6 +64,8 @@ OPENAI_API_KEY=sk-your_openai_api_key
 SUPABASE_EMAIL=your_supabase_email
 SUPABASE_PASSWORD=your_supabase_password
 SUPABASE_URL=https://your-supabase-project.vercel.app/auth/login
+SUPABASE_API_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
 # Pushover Configuration (for notifications)
 PUSHOVER_USER_KEY=your_pushover_user_key

@@ -65,7 +65,7 @@ class SupabaseAPIAgent:
         
         # Validate environment variables
         if not self.supabase_url:
-            raise ValueError("SUPABASE_URL must be set in .env file")
+            raise ValueError("SUPABASE_API_URL must be set in .env file")
         if not self.supabase_key:
             raise ValueError("SUPABASE_SERVICE_ROLE_KEY must be set in .env file")
         
