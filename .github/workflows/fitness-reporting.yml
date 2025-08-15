@@ -13,7 +13,7 @@ on:
     # - cron: '0 17 1,15 * *' # 1st and 15th of each month at 5:00 PM London time
     # - cron: '0 */6 * * *'   # Every 6 hours
     # - cron: '0 9-18/2 * * 1-5' # Every 2 hours during business hours (9 AM - 6 PM London time, weekdays)
-    - cron: '0 17 * * *'
+    - cron: '30 19 * * *'
   
   # Manual trigger with inputs
   workflow_dispatch:
