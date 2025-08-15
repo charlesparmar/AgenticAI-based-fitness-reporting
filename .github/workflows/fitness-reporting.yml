@@ -79,13 +79,29 @@ jobs:
         # Create credentials.json from secret
         echo '${{ secrets.GMAIL_CREDENTIALS }}' > credentials.json
         
-        # Create token.json from secret
+        # Create token.json from secret (ensure proper JSON formatting)
         echo '${{ secrets.GMAIL_TOKEN }}' > token.json
         
         # Verify files exist and have content
         ls -la credentials.json token.json
         echo "Credentials file size: $(wc -c < credentials.json) bytes"
         echo "Token file size: $(wc -c < token.json) bytes"
+        
+        # Validate JSON format
+        echo "Validating JSON format..."
+        if python3 -c "import json; json.load(open('credentials.json'))"; then
+          echo "✅ credentials.json is valid JSON"
+        else
+          echo "❌ credentials.json is not valid JSON"
+          exit 1
+        fi
+        
+        if python3 -c "import json; json.load(open('token.json'))"; then
+          echo "✅ token.json is valid JSON"
+        else
+          echo "❌ token.json is not valid JSON"
+          exit 1
+        fi
     
     - name: Set environment variables
       run: |
@@ -162,6 +178,12 @@ jobs:
         
         # Set Python path
         export PYTHONPATH="${PYTHONPATH}:${PWD}"
+        
+        # Debug: Check if token files exist and their content
+        echo "🔍 Debug: Checking token files..."
+        ls -la *.json
+        echo "Token file first few lines:"
+        head -3 token.json
         
         # Run the workflow
         python3 reporting_workflow.py
