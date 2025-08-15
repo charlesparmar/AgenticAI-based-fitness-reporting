@@ -109,6 +109,8 @@ jobs:
         echo "GMAIL_ADDRESS=${{ secrets.GMAIL_ADDRESS }}" >> $GITHUB_ENV
         echo "GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD }}" >> $GITHUB_ENV
         echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
+        echo "ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" >> $GITHUB_ENV
+        echo "GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}" >> $GITHUB_ENV
         echo "SUPABASE_EMAIL=${{ secrets.SUPABASE_EMAIL }}" >> $GITHUB_ENV
         echo "SUPABASE_PASSWORD=${{ secrets.SUPABASE_PASSWORD }}" >> $GITHUB_ENV
         echo "PUSHOVER_USER_KEY=${{ secrets.PUSHOVER_USER_KEY }}" >> $GITHUB_ENV
@@ -119,6 +121,14 @@ jobs:
         echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> $GITHUB_ENV
         echo "LANGSMITH_API_KEY=${{ secrets.LANGSMITH_API_KEY }}" >> $GITHUB_ENV
         echo "LANGSMITH_PROJECT=${{ secrets.LANGSMITH_PROJECT }}" >> $GITHUB_ENV
+        
+        # LLM Model Configuration for Multi-Model Setup
+        echo "LLM_PROVIDER_1=openai" >> $GITHUB_ENV
+        echo "LLM_MODEL_1=gpt-4o-mini" >> $GITHUB_ENV
+        echo "LLM_PROVIDER_2=anthropic" >> $GITHUB_ENV
+        echo "LLM_MODEL_2=claude-3-5-sonnet-20241022" >> $GITHUB_ENV
+        echo "LLM_PROVIDER_3=google" >> $GITHUB_ENV
+        echo "LLM_MODEL_3=gemini-1.5-flash" >> $GITHUB_ENV
         
         # Email configuration - use secrets or workflow inputs
         if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.custom_email_to }}" ]; then
@@ -162,6 +172,21 @@ jobs:
         echo "CC Emails: ${{ env.EMAIL_CC }}"
         echo "Send Notifications: ${{ env.EMAIL_SEND_NOTIFICATIONS }}"
         echo "Subject Prefix: ${{ env.EMAIL_SUBJECT_PREFIX }}"
+        
+        echo ""
+        echo "🤖 LLM Model Configuration:"
+        echo "LLM_PROVIDER_1: ${{ env.LLM_PROVIDER_1 }}"
+        echo "LLM_MODEL_1: ${{ env.LLM_MODEL_1 }}"
+        echo "LLM_PROVIDER_2: ${{ env.LLM_PROVIDER_2 }}"
+        echo "LLM_MODEL_2: ${{ env.LLM_MODEL_2 }}"
+        echo "LLM_PROVIDER_3: ${{ env.LLM_PROVIDER_3 }}"
+        echo "LLM_MODEL_3: ${{ env.LLM_MODEL_3 }}"
+        
+        echo ""
+        echo "🔑 API Keys Status:"
+        echo "OPENAI_API_KEY: ${OPENAI_API_KEY:+SET}"
+        echo "ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:+SET}"
+        echo "GOOGLE_API_KEY: ${GOOGLE_API_KEY:+SET}"
         
         if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
           echo ""
