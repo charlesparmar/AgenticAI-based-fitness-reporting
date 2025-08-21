@@ -86,6 +86,9 @@ class LatestEmailFetcher:
     
     def parse_fitness_data(self, email_body: str) -> Dict[str, Any]:
         """Parse fitness data from email body and create JSON structure"""
+        print(f"🔍 DEBUG: Email body length: {len(email_body)}")
+        print(f"🔍 DEBUG: Email body preview: {email_body[:500]}...")
+        
         # Clean up the HTML content
         body = re.sub(r'body\s*\{[^}]*\}', '', email_body)
         body = re.sub(r'\.[a-zA-Z-]+\s*\{[^}]*\}', '', body)
@@ -106,11 +109,35 @@ class LatestEmailFetcher:
         if time_match:
             data['metadata']['submitted'] = time_match.group(1)
         
-        # Extract measurements with more precise regex patterns
-        # Handle the specific case of "Above Navel" vs "Navel" carefully
+        # Try multiple parsing strategies
+        measurements_found = self._parse_measurements_strategy_1(body)
+        if not measurements_found:
+            measurements_found = self._parse_measurements_strategy_2(body)
+        if not measurements_found:
+            measurements_found = self._parse_measurements_strategy_3(body)
+        if not measurements_found:
+            measurements_found = self._parse_measurements_strategy_4(body)
         
-        # First, extract all measurements with a more sophisticated approach
-        # Support both colon and tab separators
+        data['measurements'] = measurements_found
+        
+        print(f"🔍 DEBUG: Total measurements found: {len(measurements_found)}")
+        if measurements_found:
+            print(f"🔍 DEBUG: Measurements: {list(measurements_found.keys())}")
+        
+        # Additional validation for Navel and Above Navel
+        if 'Above Navel' in data['measurements'] and 'Navel' in data['measurements']:
+            above_navel = data['measurements']['Above Navel']
+            navel = data['measurements']['Navel']
+            if above_navel == navel:
+                print(f"⚠️  WARNING: Above Navel ({above_navel}) and Navel ({navel}) have the same value!")
+                print(f"🔍 This might indicate a parsing error. Please verify the email content.")
+        
+        return data
+    
+    def _parse_measurements_strategy_1(self, body: str) -> Dict[str, Any]:
+        """Strategy 1: Standard colon-separated format"""
+        print("🔍 DEBUG: Trying Strategy 1 - Standard colon format")
+        
         measurement_patterns = {
             'Week Number': r'\bWeek Number\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
             'Weight': r'\bWeight\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
@@ -131,38 +158,155 @@ class LatestEmailFetcher:
             'Calves': r'\bCalves\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)'
         }
         
-        # Create a copy of the body for processing
+        return self._extract_measurements_with_patterns(body, measurement_patterns)
+    
+    def _parse_measurements_strategy_2(self, body: str) -> Dict[str, Any]:
+        """Strategy 2: Table format with headers"""
+        print("🔍 DEBUG: Trying Strategy 2 - Table format")
+        
+        # Look for table-like structure
+        lines = body.split('\n')
+        measurements = {}
+        
+        # Find the measurements section
+        in_measurements = False
+        for line in lines:
+            line = line.strip()
+            if 'measurements' in line.lower() or 'measurement' in line.lower():
+                in_measurements = True
+                continue
+            
+            if in_measurements and line:
+                # Try to parse as "Name: Value" or "Name\tValue"
+                for measurement_name in ['Week Number', 'Weight', 'Fat Percentage', 'Bmi', 'Fat Weight', 
+                                       'Lean Weight', 'Neck', 'Shoulders', 'Biceps', 'Forearms', 
+                                       'Chest', 'Above Navel', 'Navel', 'Waist', 'Hips', 'Thighs', 'Calves']:
+                    if measurement_name.lower() in line.lower():
+                        # Extract value after the measurement name
+                        value_match = re.search(rf'{re.escape(measurement_name)}[\s\t]*[:|\t][\s\t]*([\d.]+)', line, re.IGNORECASE)
+                        if value_match:
+                            value = value_match.group(1)
+                            try:
+                                if '.' in value:
+                                    measurements[measurement_name] = float(value)
+                                else:
+                                    measurements[measurement_name] = int(value)
+                            except ValueError:
+                                measurements[measurement_name] = value
+                            break
+        
+        return measurements
+    
+    def _parse_measurements_strategy_3(self, body: str) -> Dict[str, Any]:
+        """Strategy 3: HTML table format"""
+        print("🔍 DEBUG: Trying Strategy 3 - HTML table format")
+        
+        # Look for HTML table structure
+        measurements = {}
+        
+        # Extract from HTML table rows
+        table_row_pattern = r'<tr[^>]*>(.*?)</tr>'
+        table_rows = re.findall(table_row_pattern, body, re.DOTALL | re.IGNORECASE)
+        
+        for row in table_rows:
+            # Extract cells
+            cell_pattern = r'<td[^>]*>(.*?)</td>'
+            cells = re.findall(cell_pattern, row, re.DOTALL | re.IGNORECASE)
+            
+            if len(cells) >= 2:
+                measurement_name = re.sub(r'<[^>]+>', '', cells[0]).strip()
+                value_text = re.sub(r'<[^>]+>', '', cells[1]).strip()
+                
+                # Check if this is a known measurement
+                for known_name in ['Week Number', 'Weight', 'Fat Percentage', 'Bmi', 'Fat Weight', 
+                                 'Lean Weight', 'Neck', 'Shoulders', 'Biceps', 'Forearms', 
+                                 'Chest', 'Above Navel', 'Navel', 'Waist', 'Hips', 'Thighs', 'Calves']:
+                    if known_name.lower() in measurement_name.lower():
+                        # Extract numeric value
+                        value_match = re.search(r'([\d.]+)', value_text)
+                        if value_match:
+                            value = value_match.group(1)
+                            try:
+                                if '.' in value:
+                                    measurements[known_name] = float(value)
+                                else:
+                                    measurements[known_name] = int(value)
+                            except ValueError:
+                                measurements[known_name] = value
+                        break
+        
+        return measurements
+    
+    def _parse_measurements_strategy_4(self, body: str) -> Dict[str, Any]:
+        """Strategy 4: Unstructured text with flexible patterns"""
+        print("🔍 DEBUG: Trying Strategy 4 - Unstructured text")
+        
+        measurements = {}
+        
+        # More flexible patterns that don't require specific formatting
+        flexible_patterns = {
+            'Week Number': r'week\s*number[^\d]*(\d+(?:\.\d+)?)',
+            'Weight': r'weight[^\d]*(\d+(?:\.\d+)?)',
+            'Fat Percentage': r'fat\s*percentage[^\d]*(\.?\d+(?:\.\d+)?)',
+            'Bmi': r'bmi[^\d]*(\d+(?:\.\d+)?)',
+            'Fat Weight': r'fat\s*weight[^\d]*(\d+(?:\.\d+)?)',
+            'Lean Weight': r'lean\s*weight[^\d]*(\d+(?:\.\d+)?)',
+            'Neck': r'neck[^\d]*(\d+(?:\.\d+)?)',
+            'Shoulders': r'shoulders[^\d]*(\d+(?:\.\d+)?)',
+            'Biceps': r'biceps[^\d]*(\d+(?:\.\d+)?)',
+            'Forearms': r'forearms[^\d]*(\d+(?:\.\d+)?)',
+            'Chest': r'chest[^\d]*(\d+(?:\.\d+)?)',
+            'Above Navel': r'above\s*navel[^\d]*(\d+(?:\.\d+)?)',
+            'Navel': r'navel[^\d]*(\d+(?:\.\d+)?)',
+            'Waist': r'waist[^\d]*(\d+(?:\.\d+)?)',
+            'Hips': r'hips[^\d]*(\d+(?:\.\d+)?)',
+            'Thighs': r'thighs[^\d]*(\d+(?:\.\d+)?)',
+            'Calves': r'calves[^\d]*(\d+(?:\.\d+)?)'
+        }
+        
+        # Special handling for Fat Percentage in flexible patterns
+        measurements = self._extract_measurements_with_patterns(body, flexible_patterns)
+        
+        # Fix Fat Percentage if it was parsed incorrectly
+        if 'Fat Percentage' in measurements:
+            fat_pct = measurements['Fat Percentage']
+            if isinstance(fat_pct, int) and fat_pct > 100:
+                # This is likely a decimal value that was parsed as integer
+                measurements['Fat Percentage'] = fat_pct / 1000.0  # Convert 514 to 0.514
+                print(f"🔍 DEBUG: Fixed Fat Percentage from {fat_pct} to {measurements['Fat Percentage']}")
+        
+        return measurements
+    
+    def _extract_measurements_with_patterns(self, body: str, patterns: Dict[str, str]) -> Dict[str, Any]:
+        """Extract measurements using provided patterns"""
+        measurements = {}
         processed_body = body
         
-        for measurement_name, pattern in measurement_patterns.items():
+        for measurement_name, pattern in patterns.items():
             match = re.search(pattern, processed_body, re.IGNORECASE)
             if match:
                 value = match.group(1)
-                # Convert to float if it has decimal, otherwise keep as string
+                
+                # Special handling for Fat Percentage to ensure proper decimal conversion
+                if measurement_name == 'Fat Percentage' and value.startswith('.'):
+                    value = '0' + value
+                
                 try:
                     if '.' in value:
-                        data['measurements'][measurement_name] = float(value)
+                        measurements[measurement_name] = float(value)
                     else:
-                        data['measurements'][measurement_name] = int(value)
+                        measurements[measurement_name] = int(value)
                 except ValueError:
-                    data['measurements'][measurement_name] = value
+                    measurements[measurement_name] = value
                 
-                # Debug logging for critical measurements only
-                if measurement_name in ['Navel', 'Above Navel']:
-                    print(f"🔍 DEBUG: Found {measurement_name} = {value}")
+                # Debug logging for critical measurements
+                if measurement_name in ['Navel', 'Above Navel', 'Fat Percentage']:
+                    print(f"🔍 DEBUG: Found {measurement_name} = {value} -> {measurements[measurement_name]}")
                 
                 # Remove the matched text to prevent re-matching
                 processed_body = processed_body[:match.start()] + processed_body[match.end():]
         
-        # Additional validation for Navel and Above Navel
-        if 'Above Navel' in data['measurements'] and 'Navel' in data['measurements']:
-            above_navel = data['measurements']['Above Navel']
-            navel = data['measurements']['Navel']
-            if above_navel == navel:
-                print(f"⚠️  WARNING: Above Navel ({above_navel}) and Navel ({navel}) have the same value!")
-                print(f"🔍 This might indicate a parsing error. Please verify the email content.")
-        
-        return data
+        return measurements
     
     def create_fitness_json(self, fitness_data: Dict[str, Any], email_info: Dict[str, Any]) -> Dict[str, Any]:
         """Create a JSON structure with fitness data (not saved locally)"""
@@ -298,13 +442,19 @@ class LatestEmailFetcher:
         return decoded_string
     
     def _extract_email_body(self, email_message) -> str:
-        """Extract email body from email message"""
+        """Extract email body from email message with enhanced format handling"""
         body = ""
+        
+        print(f"🔍 DEBUG: Email content type: {email_message.get_content_type()}")
+        print(f"🔍 DEBUG: Email is multipart: {email_message.is_multipart()}")
         
         if email_message.is_multipart():
             for part in email_message.walk():
                 content_type = part.get_content_type()
                 content_disposition = str(part.get("Content-Disposition"))
+                
+                print(f"🔍 DEBUG: Part content type: {content_type}")
+                print(f"🔍 DEBUG: Part disposition: {content_disposition}")
                 
                 # Skip attachments
                 if "attachment" in content_disposition:
@@ -313,32 +463,60 @@ class LatestEmailFetcher:
                 # Get text content (prefer plain text over HTML)
                 if content_type == "text/plain":
                     try:
-                        body = part.get_payload(decode=True).decode()
-                        if body.strip():  # If we found plain text content, use it
+                        part_body = part.get_payload(decode=True).decode()
+                        if part_body.strip():  # If we found plain text content, use it
+                            body = part_body
+                            print(f"🔍 DEBUG: Found plain text content, length: {len(body)}")
                             break
-                    except:
+                    except Exception as e:
+                        print(f"🔍 DEBUG: Error decoding plain text: {e}")
                         continue
                 elif content_type == "text/html" and not body:
                     # Fall back to HTML if no plain text found
                     try:
                         html_body = part.get_payload(decode=True).decode()
-                        # Simple HTML to text conversion
+                        print(f"🔍 DEBUG: Found HTML content, length: {len(html_body)}")
+                        
+                        # Enhanced HTML to text conversion
                         import re
-                        # Remove HTML tags
-                        body = re.sub(r'<[^>]+>', '', html_body)
-                        # Remove extra whitespace
-                        body = re.sub(r'\s+', ' ', body).strip()
-                    except:
+                        
+                        # Remove script and style tags
+                        html_body = re.sub(r'<script[^>]*>.*?</script>', '', html_body, flags=re.DOTALL | re.IGNORECASE)
+                        html_body = re.sub(r'<style[^>]*>.*?</style>', '', html_body, flags=re.DOTALL | re.IGNORECASE)
+                        
+                        # Convert common HTML entities
+                        html_body = html_body.replace('&nbsp;', ' ')
+                        html_body = html_body.replace('&amp;', '&')
+                        html_body = html_body.replace('&lt;', '<')
+                        html_body = html_body.replace('&gt;', '>')
+                        html_body = html_body.replace('&quot;', '"')
+                        
+                        # Remove HTML tags but preserve line breaks
+                        html_body = re.sub(r'<br[^>]*>', '\n', html_body, flags=re.IGNORECASE)
+                        html_body = re.sub(r'</p>', '\n', html_body, flags=re.IGNORECASE)
+                        html_body = re.sub(r'<[^>]+>', '', html_body)
+                        
+                        # Clean up whitespace
+                        html_body = re.sub(r'\s+', ' ', html_body)
+                        html_body = re.sub(r'\n\s*\n', '\n', html_body)
+                        
+                        body = html_body.strip()
+                        print(f"🔍 DEBUG: Converted HTML to text, length: {len(body)}")
+                    except Exception as e:
+                        print(f"🔍 DEBUG: Error processing HTML: {e}")
                         continue
         else:
             # Not multipart
             try:
                 body = email_message.get_payload(decode=True).decode()
-            except:
+                print(f"🔍 DEBUG: Single part email, length: {len(body)}")
+            except Exception as e:
+                print(f"🔍 DEBUG: Error decoding single part: {e}")
                 body = "Could not decode email body"
         
         # If still no body, try to get any available content
         if not body.strip():
+            print("🔍 DEBUG: No body found, trying alternative extraction methods")
             try:
                 # Try to get the raw payload
                 payload = email_message.get_payload()
@@ -349,15 +527,20 @@ class LatestEmailFetcher:
                                 part_body = part.get_payload(decode=True).decode()
                                 if part_body.strip():
                                     body = part_body
+                                    print(f"🔍 DEBUG: Found alternative content, length: {len(body)}")
                                     break
                             except:
                                 continue
                 else:
                     body = str(payload)
-            except:
+                    print(f"🔍 DEBUG: Using raw payload, length: {len(body)}")
+            except Exception as e:
+                print(f"🔍 DEBUG: Error in alternative extraction: {e}")
                 body = "Could not extract email body"
         
-        return body.strip() if body else "No readable content found"
+        final_body = body.strip() if body else "No readable content found"
+        print(f"🔍 DEBUG: Final body length: {len(final_body)}")
+        return final_body
 
 def run_latest_email_fetcher(email_address: str, app_password: str):
     """Run the latest email fetcher agent"""
