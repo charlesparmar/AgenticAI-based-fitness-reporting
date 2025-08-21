@@ -113,7 +113,7 @@ class LatestEmailFetcher:
         measurement_patterns = {
             'Week Number': r'\bWeek Number\b\s*:\s*(\d+(?:\.\d+)?)',
             'Weight': r'\bWeight\b\s*:\s*(\d+(?:\.\d+)?)',
-            'Fat Percentage': r'\bFat Percentage\b\s*:\s*(\d+(?:\.\d+)?)',
+            'Fat Percentage': r'\bFat Percentage\b\s*:\s*(\.?\d+(?:\.\d+)?)',
             'Bmi': r'\bBmi\b\s*:\s*(\d+(?:\.\d+)?)',
             'Fat Weight': r'\bFat Weight\b\s*:\s*(\d+(?:\.\d+)?)',
             'Lean Weight': r'\bLean Weight\b\s*:\s*(\d+(?:\.\d+)?)',
@@ -146,7 +146,7 @@ class LatestEmailFetcher:
                 except ValueError:
                     data['measurements'][measurement_name] = value
                 
-                # Debug logging for critical measurements
+                # Debug logging for critical measurements only
                 if measurement_name in ['Navel', 'Above Navel']:
                     print(f"🔍 DEBUG: Found {measurement_name} = {value}")
                 
