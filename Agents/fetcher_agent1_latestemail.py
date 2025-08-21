@@ -308,6 +308,178 @@ class LatestEmailFetcher:
         
         return measurements
     
+    def validate_extracted_measurements(self, email_body: str, extracted_measurements: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate extracted measurements by re-parsing the email body with precise patterns.
+        This serves as a quality check to catch parsing errors.
+        """
+        print("🔍 VALIDATION: Starting measurement validation...")
+        
+        # More precise validation patterns - designed to be very specific
+        validation_patterns = {
+            'Week Number': [
+                r'Week\s+Number\s*[:=]\s*(\d+(?:\.\d+)?)',
+                r'Week\s+Number\s+(\d+(?:\.\d+)?)',
+                r'(?:Week|Wk)\s*#?\s*(\d+(?:\.\d+)?)'
+            ],
+            'Weight': [
+                r'Weight\s*[:=]\s*(\d+(?:\.\d+)?)',
+                r'Weight\s+(\d+(?:\.\d+)?)',
+                r'Body\s+Weight\s*[:=]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'Fat Percentage': [
+                r'Fat\s+Percentage\s*[:=]\s*(0?\.\d+|\d+\.\d+)',
+                r'Fat\s+%\s*[:=]?\s*(0?\.\d+|\d+\.\d+)',
+                r'Body\s+Fat\s*[:=]?\s*(0?\.\d+|\d+\.\d+)'
+            ],
+            'Bmi': [
+                r'BMI\s*[:=]\s*(\d+(?:\.\d+)?)',
+                r'B\.?M\.?I\.?\s*[:=]?\s*(\d+(?:\.\d+)?)',
+                r'Body\s+Mass\s+Index\s*[:=]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'Fat Weight': [
+                r'Fat\s+Weight\s*[:=]\s*(\d+(?:\.\d+)?)',
+                r'Fat\s+Wt\s*[:=]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'Lean Weight': [
+                r'Lean\s+Weight\s*[:=]\s*(\d+(?:\.\d+)?)',
+                r'Lean\s+Wt\s*[:=]?\s*(\d+(?:\.\d+)?)',
+                r'Muscle\s+Weight\s*[:=]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'Neck': [
+                r'Neck\s*[:=]\s*(\d+(?:\.\d+)?)',
+                r'Neck\s+(\d+(?:\.\d+)?)\s*(?:cm|in|inches?)?'
+            ],
+            'Shoulders': [
+                r'Shoulders\s*[:=]\s*(\d+(?:\.\d+)?)',
+                r'Shoulders\s+(\d+(?:\.\d+)?)\s*(?:cm|in|inches?)?'
+            ],
+            'Biceps': [
+                r'Biceps\s*[:=]\s*(\d+(?:\.\d+)?)',
+                r'Biceps\s+(\d+(?:\.\d+)?)\s*(?:cm|in|inches?)?'
+            ],
+            'Forearms': [
+                r'Forearms\s*[:=]\s*(\d+(?:\.\d+)?)',
+                r'Forearms\s+(\d+(?:\.\d+)?)\s*(?:cm|in|inches?)?'
+            ],
+            'Chest': [
+                r'Chest\s*[:=]\s*(\d+(?:\.\d+)?)',
+                r'Chest\s+(\d+(?:\.\d+)?)\s*(?:cm|in|inches?)?'
+            ],
+            'Above Navel': [
+                r'Above\s+Navel\s*[:=]\s*(\d+(?:\.\d+)?)',
+                r'Above\s+Navel\s+(\d+(?:\.\d+)?)\s*(?:cm|in|inches?)?'
+            ],
+            'Navel': [
+                r'(?<!Above\s)Navel\s*[:=]\s*(\d+(?:\.\d+)?)',
+                r'(?<!Above\s)Navel\s+(\d+(?:\.\d+)?)\s*(?:cm|in|inches?)?',
+                r'Belly\s+Button\s*[:=]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'Waist': [
+                r'Waist\s*[:=]\s*(\d+(?:\.\d+)?)',
+                r'Waist\s+(\d+(?:\.\d+)?)\s*(?:cm|in|inches?)?'
+            ],
+            'Hips': [
+                r'Hips\s*[:=]\s*(\d+(?:\.\d+)?)',
+                r'Hips\s+(\d+(?:\.\d+)?)\s*(?:cm|in|inches?)?'
+            ],
+            'Thighs': [
+                r'Thighs\s*[:=]\s*(\d+(?:\.\d+)?)',
+                r'Thighs\s+(\d+(?:\.\d+)?)\s*(?:cm|in|inches?)?'
+            ],
+            'Calves': [
+                r'Calves\s*[:=]\s*(\d+(?:\.\d+)?)',
+                r'Calves\s+(\d+(?:\.\d+)?)\s*(?:cm|in|inches?)?'
+            ]
+        }
+        
+        validated_measurements = {}
+        corrections_made = {}
+        
+        # Validate each measurement
+        for measurement_name in extracted_measurements.keys():
+            if measurement_name in validation_patterns:
+                validated_value = None
+                
+                # Try each validation pattern for this measurement
+                for pattern in validation_patterns[measurement_name]:
+                    match = re.search(pattern, email_body, re.IGNORECASE)
+                    if match:
+                        raw_value = match.group(1)
+                        
+                        # Convert to appropriate type
+                        try:
+                            if '.' in raw_value:
+                                validated_value = float(raw_value)
+                            else:
+                                validated_value = int(raw_value)
+                            break  # Use first successful match
+                        except ValueError:
+                            continue
+                
+                if validated_value is not None:
+                    validated_measurements[measurement_name] = validated_value
+                    
+                    # Check for discrepancies
+                    extracted_value = extracted_measurements[measurement_name]
+                    if extracted_value != validated_value:
+                        corrections_made[measurement_name] = {
+                            'extracted': extracted_value,
+                            'validated': validated_value
+                        }
+                        print(f"⚠️  VALIDATION: Correcting {measurement_name}: {extracted_value} → {validated_value}")
+                else:
+                    # If validation failed, keep the extracted value
+                    validated_measurements[measurement_name] = extracted_measurements[measurement_name]
+                    print(f"ℹ️  VALIDATION: Could not validate {measurement_name}, keeping extracted value: {extracted_measurements[measurement_name]}")
+            else:
+                # Keep measurements that don't have validation patterns
+                validated_measurements[measurement_name] = extracted_measurements[measurement_name]
+        
+        # Additional range validation for specific measurements
+        validated_measurements = self._apply_range_validation(validated_measurements, corrections_made)
+        
+        # Log validation summary
+        if corrections_made:
+            print(f"🔧 VALIDATION: Made {len(corrections_made)} corrections:")
+            for measurement, correction in corrections_made.items():
+                print(f"   • {measurement}: {correction['extracted']} → {correction['validated']}")
+        else:
+            print("✅ VALIDATION: All measurements validated successfully, no corrections needed")
+        
+        return validated_measurements
+    
+    def _apply_range_validation(self, measurements: Dict[str, Any], corrections_made: Dict[str, Any]) -> Dict[str, Any]:
+        """Apply additional range validation for measurements"""
+        # Define reasonable ranges for measurements
+        ranges = {
+            'Fat Percentage': (0.05, 0.60),  # 5% to 60%
+            'Bmi': (10.0, 60.0),  # BMI between 10 and 60
+            'Weight': (30.0, 500.0),  # Weight between 30 and 500 lbs/kg
+            'Week Number': (1, 104)  # Week 1 to 104 (2 years)
+        }
+        
+        for measurement_name, (min_val, max_val) in ranges.items():
+            if measurement_name in measurements:
+                value = measurements[measurement_name]
+                if not (min_val <= value <= max_val):
+                    print(f"⚠️  RANGE WARNING: {measurement_name} value {value} is outside expected range [{min_val}, {max_val}]")
+                    
+                    # Special handling for Fat Percentage
+                    if measurement_name == 'Fat Percentage' and value > 1.0:
+                        # Might be a percentage instead of decimal (e.g., 25.4 instead of 0.254)
+                        corrected_value = value / 100.0
+                        if min_val <= corrected_value <= max_val:
+                            measurements[measurement_name] = corrected_value
+                            corrections_made[measurement_name] = {
+                                'extracted': value,
+                                'validated': corrected_value,
+                                'reason': 'Range validation - converted percentage to decimal'
+                            }
+                            print(f"🔧 RANGE CORRECTION: {measurement_name}: {value} → {corrected_value} (converted % to decimal)")
+        
+        return measurements
+    
     def create_fitness_json(self, fitness_data: Dict[str, Any], email_info: Dict[str, Any]) -> Dict[str, Any]:
         """Create a JSON structure with fitness data (not saved locally)"""
         # Create comprehensive JSON structure
@@ -391,6 +563,13 @@ class LatestEmailFetcher:
             
             # Parse fitness data from body
             fitness_data = self.parse_fitness_data(body)
+            
+            # Validate the extracted measurements
+            if fitness_data.get('measurements'):
+                print("\n🔍 VALIDATION: Validating extracted measurements...")
+                validated_measurements = self.validate_extracted_measurements(body, fitness_data['measurements'])
+                fitness_data['measurements'] = validated_measurements
+                print("✅ VALIDATION: Measurement validation completed\n")
             
             # Create JSON structure (not saved locally)
             json_data = self.create_fitness_json(fitness_data, {
