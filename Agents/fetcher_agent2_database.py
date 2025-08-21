@@ -29,9 +29,9 @@ class DatabaseFetcher:
             conn = sqlitecloud.connect(self.connection_string)
             cursor = conn.cursor()
             
-            # Query to get the latest entry from fitness_data_new table
+            # Query to get the latest entry from fitness_measurements table
             query = """
-            SELECT * FROM fitness_data_new 
+            SELECT * FROM fitness_measurements 
             ORDER BY created_at DESC 
             LIMIT 1
             """
@@ -154,6 +154,15 @@ class DatabaseFetcher:
                 },
                 'processed_at': datetime.now().isoformat()
             }
+            
+            # Debug logging for critical measurements
+            above_navel = db_entry.get('above_navel')
+            navel = db_entry.get('navel')
+            print(f"🔍 DEBUG: Database - Above Navel: {above_navel}, Navel: {navel}")
+            
+            if above_navel == navel and above_navel is not None:
+                print(f"⚠️  WARNING: Database shows Above Navel ({above_navel}) and Navel ({navel}) have the same value!")
+                print(f"🔍 This might indicate a data storage issue in the database.")
             
             print(f"✅ Created database JSON structure")
             return json_data

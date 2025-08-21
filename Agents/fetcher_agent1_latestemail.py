@@ -106,17 +106,35 @@ class LatestEmailFetcher:
         if time_match:
             data['metadata']['submitted'] = time_match.group(1)
         
-        # Known measurement names
-        measurement_names = [
-            'Week Number', 'Weight', 'Fat Percentage', 'Bmi', 'Fat Weight', 'Lean Weight',
-            'Neck', 'Shoulders', 'Biceps', 'Forearms', 'Chest', 'Above Navel', 
-            'Navel', 'Waist', 'Hips', 'Thighs', 'Calves'
-        ]
+        # Extract measurements with more precise regex patterns
+        # Handle the specific case of "Above Navel" vs "Navel" carefully
         
-        # Extract measurements
-        for measurement_name in measurement_names:
-            pattern = rf'{re.escape(measurement_name)}\s+(\d+(?:\.\d+)?)'
-            match = re.search(pattern, body, re.IGNORECASE)
+        # First, extract all measurements with a more sophisticated approach
+        measurement_patterns = {
+            'Week Number': r'\bWeek Number\b\s*:\s*(\d+(?:\.\d+)?)',
+            'Weight': r'\bWeight\b\s*:\s*(\d+(?:\.\d+)?)',
+            'Fat Percentage': r'\bFat Percentage\b\s*:\s*(\d+(?:\.\d+)?)',
+            'Bmi': r'\bBmi\b\s*:\s*(\d+(?:\.\d+)?)',
+            'Fat Weight': r'\bFat Weight\b\s*:\s*(\d+(?:\.\d+)?)',
+            'Lean Weight': r'\bLean Weight\b\s*:\s*(\d+(?:\.\d+)?)',
+            'Neck': r'\bNeck\b\s*:\s*(\d+(?:\.\d+)?)',
+            'Shoulders': r'\bShoulders\b\s*:\s*(\d+(?:\.\d+)?)',
+            'Biceps': r'\bBiceps\b\s*:\s*(\d+(?:\.\d+)?)',
+            'Forearms': r'\bForearms\b\s*:\s*(\d+(?:\.\d+)?)',
+            'Chest': r'\bChest\b\s*:\s*(\d+(?:\.\d+)?)',
+            'Above Navel': r'\bAbove Navel\b\s*:\s*(\d+(?:\.\d+)?)',
+            'Navel': r'\bNavel\b\s*:\s*(\d+(?:\.\d+)?)',
+            'Waist': r'\bWaist\b\s*:\s*(\d+(?:\.\d+)?)',
+            'Hips': r'\bHips\b\s*:\s*(\d+(?:\.\d+)?)',
+            'Thighs': r'\bThighs\b\s*:\s*(\d+(?:\.\d+)?)',
+            'Calves': r'\bCalves\b\s*:\s*(\d+(?:\.\d+)?)'
+        }
+        
+        # Create a copy of the body for processing
+        processed_body = body
+        
+        for measurement_name, pattern in measurement_patterns.items():
+            match = re.search(pattern, processed_body, re.IGNORECASE)
             if match:
                 value = match.group(1)
                 # Convert to float if it has decimal, otherwise keep as string
@@ -127,6 +145,21 @@ class LatestEmailFetcher:
                         data['measurements'][measurement_name] = int(value)
                 except ValueError:
                     data['measurements'][measurement_name] = value
+                
+                # Debug logging for critical measurements
+                if measurement_name in ['Navel', 'Above Navel']:
+                    print(f"🔍 DEBUG: Found {measurement_name} = {value}")
+                
+                # Remove the matched text to prevent re-matching
+                processed_body = processed_body[:match.start()] + processed_body[match.end():]
+        
+        # Additional validation for Navel and Above Navel
+        if 'Above Navel' in data['measurements'] and 'Navel' in data['measurements']:
+            above_navel = data['measurements']['Above Navel']
+            navel = data['measurements']['Navel']
+            if above_navel == navel:
+                print(f"⚠️  WARNING: Above Navel ({above_navel}) and Navel ({navel}) have the same value!")
+                print(f"🔍 This might indicate a parsing error. Please verify the email content.")
         
         return data
     
