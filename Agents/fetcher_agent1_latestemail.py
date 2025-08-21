@@ -110,24 +110,25 @@ class LatestEmailFetcher:
         # Handle the specific case of "Above Navel" vs "Navel" carefully
         
         # First, extract all measurements with a more sophisticated approach
+        # Support both colon and tab separators
         measurement_patterns = {
-            'Week Number': r'\bWeek Number\b\s*:\s*(\d+(?:\.\d+)?)',
-            'Weight': r'\bWeight\b\s*:\s*(\d+(?:\.\d+)?)',
-            'Fat Percentage': r'\bFat Percentage\b\s*:\s*(\.?\d+(?:\.\d+)?)',
-            'Bmi': r'\bBmi\b\s*:\s*(\d+(?:\.\d+)?)',
-            'Fat Weight': r'\bFat Weight\b\s*:\s*(\d+(?:\.\d+)?)',
-            'Lean Weight': r'\bLean Weight\b\s*:\s*(\d+(?:\.\d+)?)',
-            'Neck': r'\bNeck\b\s*:\s*(\d+(?:\.\d+)?)',
-            'Shoulders': r'\bShoulders\b\s*:\s*(\d+(?:\.\d+)?)',
-            'Biceps': r'\bBiceps\b\s*:\s*(\d+(?:\.\d+)?)',
-            'Forearms': r'\bForearms\b\s*:\s*(\d+(?:\.\d+)?)',
-            'Chest': r'\bChest\b\s*:\s*(\d+(?:\.\d+)?)',
-            'Above Navel': r'\bAbove Navel\b\s*:\s*(\d+(?:\.\d+)?)',
-            'Navel': r'\bNavel\b\s*:\s*(\d+(?:\.\d+)?)',
-            'Waist': r'\bWaist\b\s*:\s*(\d+(?:\.\d+)?)',
-            'Hips': r'\bHips\b\s*:\s*(\d+(?:\.\d+)?)',
-            'Thighs': r'\bThighs\b\s*:\s*(\d+(?:\.\d+)?)',
-            'Calves': r'\bCalves\b\s*:\s*(\d+(?:\.\d+)?)'
+            'Week Number': r'\bWeek Number\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
+            'Weight': r'\bWeight\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
+            'Fat Percentage': r'\bFat Percentage\b[\s\t]*[:|\t][\s\t]*(\.?\d+(?:\.\d+)?)',
+            'Bmi': r'\bBmi\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
+            'Fat Weight': r'\bFat Weight\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
+            'Lean Weight': r'\bLean Weight\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
+            'Neck': r'\bNeck\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
+            'Shoulders': r'\bShoulders\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
+            'Biceps': r'\bBiceps\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
+            'Forearms': r'\bForearms\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
+            'Chest': r'\bChest\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
+            'Above Navel': r'\bAbove Navel\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
+            'Navel': r'\bNavel\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
+            'Waist': r'\bWaist\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
+            'Hips': r'\bHips\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
+            'Thighs': r'\bThighs\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
+            'Calves': r'\bCalves\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)'
         }
         
         # Create a copy of the body for processing
