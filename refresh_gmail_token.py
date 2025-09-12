@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Gmail Token Refresh Script
-This script helps refresh Gmail API tokens with the correct scopes for the fitness reporting system.
+Gmail Token Refresh Script for Sender Email (charles@parmarcharles.com)
+This script helps refresh OAuth 2.0 tokens for sending emails in the fitness reporting system.
+Note: This is only for the email sending functionality, not for email fetching.
 """
 
 import os
@@ -31,21 +32,22 @@ def refresh_gmail_token():
     credentials_path = "credentials.json"
     if not os.path.exists(credentials_path):
         print(f"❌ Error: {credentials_path} not found!")
-        print("Please download your Gmail API credentials from Google Cloud Console:")
+        print("Please download your OAuth 2.0 credentials for charles@parmarcharles.com from Google Cloud Console:")
         print("1. Go to https://console.cloud.google.com/")
         print("2. Select your project")
         print("3. Go to APIs & Services > Credentials")
         print("4. Download the OAuth 2.0 Client ID as 'credentials.json'")
-        print("5. Place it in this directory")
+        print("5. Ensure the credentials are configured for charles@parmarcharles.com domain")
+        print("6. Place it in this directory")
         return False
     
     try:
         # Load existing token if it exists
-        token_path = "token.json"
+        token_path = "token_sender.json"
         creds = None
         
         if os.path.exists(token_path):
-            print("📁 Found existing token.json")
+            print("📁 Found existing token_sender.json")
             creds = Credentials.from_authorized_user_file(token_path, SCOPES)
         
         # If there are no (valid) credentials available, let the user log in
@@ -76,10 +78,11 @@ def refresh_gmail_token():
                 print("The server will automatically close after authentication.")
                 print()
                 
-                creds = flow.run_local_server(port=0)
+                # Use a fixed port to avoid redirect URI mismatch
+                creds = flow.run_local_server(port=8080)
         
         # Save the credentials for the next run
-        print("💾 Saving new token to token.json...")
+        print("💾 Saving new token to token_sender.json...")
         with open(token_path, 'w') as token:
             token.write(creds.to_json())
         
@@ -103,8 +106,9 @@ def refresh_gmail_token():
 
 def main():
     """Main function"""
-    print("Gmail API Token Refresh Tool")
-    print("This tool will refresh your Gmail API token with the correct scopes.")
+    print("Gmail API Token Refresh Tool for Sender Email (charles@parmarcharles.com)")
+    print("This tool will refresh your OAuth 2.0 token for sending emails.")
+    print("Note: This does not affect email fetching which uses app passwords.")
     print()
     
     success = refresh_gmail_token()

@@ -48,13 +48,13 @@ GMAIL_SCOPES = [
 def check_and_refresh_gmail_token():
     """Check if Gmail token is valid, refresh if needed"""
     try:
-        print("🔍 Checking Gmail token status...")
+        print("🔍 Checking Gmail token status for charles@parmarcharles.com...")
         
-        # Check if token.json exists
-        token_path = "token.json"
+        # Check if token_sender.json exists (for OAuth email sending)
+        token_path = "token_sender.json"
         if not os.path.exists(token_path):
-            print("❌ token.json not found!")
-            print("Please run refresh_gmail_token.py first to create your token.")
+            print("❌ token_sender.json not found!")
+            print("Please run refresh_gmail_token.py first to create your OAuth token for charles@parmarcharles.com.")
             return False
         
         # Load existing token
@@ -92,7 +92,7 @@ def refresh_gmail_token(creds=None):
         
         # If no creds provided, try to load from file
         if not creds:
-            token_path = "token.json"
+            token_path = "token_sender.json"
             if os.path.exists(token_path):
                 creds = Credentials.from_authorized_user_file(token_path, GMAIL_SCOPES)
         
@@ -127,8 +127,8 @@ def refresh_gmail_token(creds=None):
                 creds = flow.run_local_server(port=0)
         
         # Save the credentials for the next run
-        print("💾 Saving new token to token.json...")
-        with open("token.json", 'w') as token:
+        print("💾 Saving new token to token_sender.json...")
+        with open("token_sender.json", 'w') as token:
             token.write(creds.to_json())
         
         print("✅ Token successfully refreshed and saved!")
@@ -253,8 +253,9 @@ def create_reporting_workflow():
     
     def fetch_email_node(state):
         """Fetch email node"""
-        email_address = os.getenv("GMAIL_ADDRESS")
-        app_password = os.getenv("GMAIL_APP_PASSWORD")
+        # Use separate credentials for fetching emails (charlesparmar@gmail.com)
+        email_address = os.getenv("GMAIL_FETCHER_ADDRESS")
+        app_password = os.getenv("GMAIL_FETCHER_APP_PASSWORD")
         
         result = fetch_email_tool.invoke({
             "email_address": email_address,
@@ -629,23 +630,33 @@ def run_reporting_workflow():
         print("❌ Gmail token check/refresh failed. Please check your credentials.")
         return
     
-    # Check credentials
-    email_address = os.getenv("GMAIL_ADDRESS")
-    app_password = os.getenv("GMAIL_APP_PASSWORD")
+    # Check fetcher credentials (for charlesparmar@gmail.com)
+    fetcher_email = os.getenv("GMAIL_FETCHER_ADDRESS")
+    fetcher_password = os.getenv("GMAIL_FETCHER_APP_PASSWORD")
     
-    if not email_address or not app_password:
-        print("❌ Gmail credentials not found")
+    if not fetcher_email or not fetcher_password:
+        print("❌ Fetcher Gmail credentials not found")
+        print("Please set GMAIL_FETCHER_ADDRESS and GMAIL_FETCHER_APP_PASSWORD in your .env file")
+        return
+    
+    # Check sender credentials (OAuth for charles@parmarcharles.com)
+    sender_email = os.getenv("GMAIL_ADDRESS", "charles@parmarcharles.com")
+    print(f"🔍 OAuth sender email: {sender_email}")
+    
+    if not os.path.exists("token_sender.json"):
+        print("❌ OAuth token for sender email not found")
+        print("Please ensure OAuth is properly configured for charles@parmarcharles.com")
         return
     
     print(f"🔍 Step 1: Validating model configuration")
-    print(f"📧 Step 2: Fetching fitness email from {email_address}")
+    print(f"📧 Step 2: Fetching fitness email from {fetcher_email}")
     print(f"🗄️ Step 3: Fetching latest database entry")
     print(f"🔄 Step 4: Reconciling data with LLM")
     print(f"🔍 Step 5: Validating data against historical trends")
     print(f"📱 Step 6: Entering data into Supabase")
     print(f"📝 Step 7: Drafting email report (with feedback loop)")
     print(f"🔍 Step 8: Evaluating email body quality")
-    print(f"📤 Step 9: Sending final email via Final Email Agent (if approved)")
+    print(f"📤 Step 9: Sending final email via Final Email Agent from {sender_email} (if approved)")
     print(f"🧹 Step 10: Post-cleanup (clean up resources)")
     print("-" * 70)
     
