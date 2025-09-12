@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sample Flow Test - Pure HTML/CSS/JS</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+            padding: 32px;
+            border: 1px solid #e9ecef;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        
+        .flowchart-container {
+            position: relative;
+            background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
+            border-radius: 12px;
+            padding: 40px;
+            border: 1px solid #e1e5e9;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.04);
+            overflow: auto;
+            min-height: 600px;
+        }
+        
+        .flowchart {
+            position: relative;
+            width: 1200px;
+            height: 500px;
+            margin: 0 auto;
+        }
+        
+        /* Node Styles */
+        .node {
+            position: absolute;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            text-align: center;
+            min-width: 120px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 2px solid;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .node:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Start/End Nodes (Oval) */
+        .node.start, .node.end {
+            border-radius: 25px;
+            padding: 15px 25px;
+        }
+        
+        .node.start {
+            background: #e3f2fd;
+            border-color: #1976d2;
+            color: #0d47a1;
+        }
+        
+        .node.end {
+            background: #e8f5e8;
+            border-color: #2e7d32;
+            color: #1b5e20;
+        }
+        
+        /* Process Nodes (Rectangular) */
+        .node.process {
+            background: #f1f8e9;
+            border-color: #689f38;
+            color: #33691e;
+        }
+        
+        /* Decision Nodes (Diamond) */
+        .node.decision {
+            background: #fff8e1;
+            border-color: #fbc02d;
+            color: #f57f17;
+            transform: rotate(45deg);
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        
+        .node.decision .text {
+            transform: rotate(-45deg);
+            font-size: 12px;
+            line-height: 1.2;
+        }
+        
+        /* Failure Node */
+        .node.failure {
+            background: #ffebee;
+            border-color: #d32f2f;
+            color: #b71c1c;
+        }
+        
+        /* Arrow Styles */
+        .arrow {
+            position: absolute;
+            height: 2px;
+            background: #666;
+            transform-origin: left center;
+        }
+        
+        .arrow::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: -3px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid #666;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+        }
+        
+        /* Arrow Labels */
+        .arrow-label {
+            position: absolute;
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
+        /* Node Positions */
+        .node-start { top: 50px; left: 50px; }
+        .node-fetch-email { top: 50px; left: 250px; }
+        .node-validate-data { top: 50px; left: 450px; }
+        .node-validation-success { top: 50px; left: 650px; }
+        .node-validation-failed { top: 50px; left: 850px; }
+        .node-end { top: 50px; left: 1050px; }
+        .node-supabase-entry { top: 200px; left: 650px; }
+        .node-entry-success { top: 200px; left: 850px; }
+        .node-next-action { top: 200px; left: 1050px; }
+        
+        /* Arrow Positions and Rotations */
+        .arrow-1 { top: 75px; left: 170px; width: 80px; }
+        .arrow-2 { top: 75px; left: 370px; width: 200px; }
+        .arrow-3 { top: 75px; left: 570px; width: 80px; }
+        .arrow-4 { top: 75px; left: 770px; width: 80px; }
+        .arrow-5 { top: 75px; left: 970px; width: 80px; }
+        
+        /* Decision box arrows with corner connections */
+        .arrow-6 { 
+            top: 25px; 
+            left: 700px; 
+            width: 150px; 
+            transform: rotate(45deg);
+        }
+        .arrow-7 { 
+            top: 125px; 
+            left: 700px; 
+            width: 150px; 
+            transform: rotate(-45deg);
+        }
+        .arrow-8 { 
+            top: 225px; 
+            left: 770px; 
+            width: 80px; 
+        }
+        .arrow-9 { 
+            top: 125px; 
+            left: 900px; 
+            width: 150px; 
+            transform: rotate(45deg);
+        }
+        .arrow-10 { 
+            top: 225px; 
+            left: 900px; 
+            width: 150px; 
+            transform: rotate(-45deg);
+        }
+        .arrow-11 { 
+            top: 225px; 
+            left: 1070px; 
+            width: 80px; 
+        }
+        
+        /* Arrow Labels */
+        .label-no-1 { top: 15px; left: 750px; }
+        .label-yes-1 { top: 135px; left: 750px; }
+        .label-no-2 { top: 115px; left: 950px; }
+        .label-yes-2 { top: 235px; left: 950px; }
+        
+        .description {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .description h3 {
+            margin: 0 0 12px 0;
+            color: #333;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .description ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .description li {
+            margin-bottom: 8px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sample Flow Test - Pure HTML/CSS/JS</h1>
+        
+        <div class="flowchart-container">
+            <div class="flowchart">
+                <!-- Nodes -->
+                <div class="node start node-start">START</div>
+                <div class="node process node-fetch-email">Fetch Email</div>
+                <div class="node process node-validate-data">Validate data</div>
+                <div class="node decision node-validation-success">
+                    <div class="text">Validation Success?</div>
+                </div>
+                <div class="node failure node-validation-failed">Validation Failed</div>
+                <div class="node end node-end">END</div>
+                <div class="node process node-supabase-entry">Supabase Entry</div>
+                <div class="node decision node-entry-success">
+                    <div class="text">Entry Success?</div>
+                </div>
+                <div class="node process node-next-action">Next Action</div>
+                
+                <!-- Arrows -->
+                <div class="arrow arrow-1"></div>
+                <div class="arrow arrow-2"></div>
+                <div class="arrow arrow-3"></div>
+                <div class="arrow arrow-4"></div>
+                <div class="arrow arrow-5"></div>
+                <div class="arrow arrow-6"></div>
+                <div class="arrow arrow-7"></div>
+                <div class="arrow arrow-8"></div>
+                <div class="arrow arrow-9"></div>
+                <div class="arrow arrow-10"></div>
+                <div class="arrow arrow-11"></div>
+                
+                <!-- Arrow Labels -->
+                <div class="arrow-label label-no-1">No</div>
+                <div class="arrow-label label-yes-1">Yes</div>
+                <div class="arrow-label label-no-2">No</div>
+                <div class="arrow-label label-yes-2">Yes</div>
+            </div>
+        </div>
+        
+        <div class="description">
+            <h3>Sample Flow Features:</h3>
+            <ul>
+                <li><strong>Oval START/END nodes:</strong> Rounded rectangle shape with proper styling</li>
+                <li><strong>Rectangular Process nodes:</strong> Clean rectangular boxes for process steps</li>
+                <li><strong>Diamond Decision nodes:</strong> Rotated squares for decision points</li>
+                <li><strong>Corner connections:</strong> Arrows originate from exact corners of decision boxes</li>
+                <li><strong>Diagonal arrows:</strong> Natural diagonal connections from decision corners</li>
+                <li><strong>Proper arrow directions:</strong> "No" paths go up, "Yes" paths go down</li>
+                <li><strong>Clean layout:</strong> Horizontal flow with vertical branching</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Add click handlers for nodes
+        document.querySelectorAll('.node').forEach(node => {
+            node.addEventListener('click', function() {
+                // Remove active class from all nodes
+                document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
+                // Add active class to clicked node
+                this.classList.add('active');
+                
+                console.log('Clicked node:', this.textContent || this.querySelector('.text')?.textContent);
+            });
+        });
+        
+        // Add hover effects for arrows
+        document.querySelectorAll('.arrow').forEach(arrow => {
+            arrow.addEventListener('mouseenter', function() {
+                this.style.background = '#2196F3';
+                this.style.boxShadow = '0 0 8px rgba(33, 150, 243, 0.6)';
+            });
+            
+            arrow.addEventListener('mouseleave', function() {
+                this.style.background = '#666';
+                this.style.boxShadow = 'none';
+            });
+        });
+    </script>
+</body>
+</html>

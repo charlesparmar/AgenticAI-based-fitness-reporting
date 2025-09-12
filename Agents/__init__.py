@@ -35,7 +35,7 @@ from .supabase_api_agent import (
 
 # Import report drafter agent
 from .report_drafter_agent import (
-    ReportDrafterAgent,
+    ModernReportDrafterAgent,
     run_report_drafter_agent
 )
 

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Corner Connections</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+            padding: 32px;
+            border: 1px solid #e9ecef;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        
+        .diagram-wrapper {
+            background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #e1e5e9;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.04);
+            overflow: auto;
+        }
+        
+        .mermaid {
+            text-align: center;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.06));
+            transform: scale(1.0);
+            transform-origin: center;
+            min-width: 1200px;
+        }
+        
+        .mermaid svg {
+            border-radius: 8px;
+            width: 100% !important;
+            height: auto !important;
+        }
+        
+        .mermaid .node text {
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+        }
+        
+        /* Improved scrolling */
+        .diagram-wrapper::-webkit-scrollbar {
+            height: 12px;
+            width: 12px;
+        }
+        
+        .diagram-wrapper::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 6px;
+        }
+        
+        .diagram-wrapper::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 6px;
+        }
+        
+        .diagram-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        .diagram-wrapper::-webkit-scrollbar-corner {
+            background: #f1f1f1;
+        }
+        
+        .description {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .description h3 {
+            margin: 0 0 12px 0;
+            color: #333;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .description ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .description li {
+            margin-bottom: 8px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Corner Connections for Decision Boxes</h1>
+        
+        <div class="diagram-wrapper">
+            <div class="mermaid">
+                graph LR
+                    %% Test diagram focusing on corner connections
+                    A([START]) --> B[Process 1]
+                    B --> C{Decision 1?}
+                    
+                    %% First decision with corner connections
+                    C -->|No| D([END: Failed])
+                    C -->|Yes| E[Process 2]
+                    
+                    %% Second decision with corner connections
+                    E --> F{Decision 2?}
+                    F -->|No| D
+                    F -->|Yes| G[Process 3]
+                    
+                    %% Final flow
+                    G --> H([END: Success])
+                    
+                    %% Styling for professional appearance
+                    style A fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
+                    style H fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,color:#1b5e20
+                    style D fill:#ffebee,stroke:#d32f2f,stroke-width:2px,color:#b71c1c
+                    
+                    %% Decision boxes styling - Professional diamond appearance
+                    style C fill:#fff8e1,stroke:#fbc02d,stroke-width:2px,color:#f57f17
+                    style F fill:#fff8e1,stroke:#fbc02d,stroke-width:2px,color:#f57f17
+                    
+                    %% Process boxes styling - Clean rectangular appearance
+                    style B fill:#f1f8e9,stroke:#689f38,stroke-width:1px,color:#33691e
+                    style E fill:#f1f8e9,stroke:#689f38,stroke-width:1px,color:#33691e
+                    style G fill:#f1f8e9,stroke:#689f38,stroke-width:1px,color:#33691e
+                    
+                    %% Link styling for professional appearance
+                    linkStyle default stroke:#666,stroke-width:2px,fill:none
+            </div>
+        </div>
+        
+        <div class="description">
+            <h3>Corner Connection Test:</h3>
+            <ul>
+                <li><strong>Decision 1 "No" path:</strong> Should connect from top corner of Decision 1 to END: Failed</li>
+                <li><strong>Decision 1 "Yes" path:</strong> Should connect from bottom corner of Decision 1 to Process 2</li>
+                <li><strong>Decision 2 "No" path:</strong> Should connect from top corner of Decision 2 to END: Failed (pointing upwards)</li>
+                <li><strong>Decision 2 "Yes" path:</strong> Should connect from bottom corner of Decision 2 to Process 3</li>
+                <li><strong>Oval START/END nodes:</strong> Using ([START]) and ([END]) syntax</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Mermaid with professional settings
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'step',
+                rankSpacing: 100,
+                nodeSpacing: 80,
+                padding: 30,
+                diagramPadding: 25,
+                nodeAlignment: 'center'
+            }
+        });
+    </script>
+</body>
+</html>

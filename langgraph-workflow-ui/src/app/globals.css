@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for the workflow diagram */
+.mermaid-diagram .node {
+  transition: all 0.3s ease;
+  cursor: pointer;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.mermaid-diagram .node.active {
+  filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.8)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+  transform: scale(1.08);
+  z-index: 10;
+}
+
+.mermaid-diagram .node text {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+/* Enhanced arrow styling */
+.mermaid-diagram .edgePath {
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+.mermaid-diagram .edgePath.active {
+  stroke: #3b82f6 !important;
+  stroke-width: 3px !important;
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6));
+  animation: arrowFlow 2s infinite;
+}
+
+/* Decision box specific styling */
+.mermaid-diagram .node[id*="F"], 
+.mermaid-diagram .node[id*="H"], 
+.mermaid-diagram .node[id*="L"], 
+.mermaid-diagram .node[id*="N"] {
+  filter: drop-shadow(0 3px 6px rgba(251, 192, 45, 0.3));
+}
+
+/* Animation for arrow flow */
+@keyframes arrowFlow {
+  0% {
+    stroke-dasharray: 5, 5;
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -10;
+  }
+}
+
+/* Improved scrolling */
+.diagram-wrapper::-webkit-scrollbar {
+  height: 12px;
+  width: 12px;
+}
+
+.diagram-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 6px;
+}
+
+.diagram-wrapper::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 6px;
+}
+
+.diagram-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.diagram-wrapper::-webkit-scrollbar-corner {
+  background: #f1f1f1;
+}
+
+/* Animation for node transitions */
+.mermaid-diagram .node {
+  animation: nodeAppear 0.5s ease-out;
+}
+
+@keyframes nodeAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
