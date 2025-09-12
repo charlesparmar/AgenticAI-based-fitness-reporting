@@ -94,15 +94,20 @@ project_root/
    - Fetches fitness data emails from inbox
    - Parses and extracts measurement data
 
-2. **Process Data**: Internal processing steps
-   - Database reconciliation
-   - Data validation
-   - Supabase entry
+2. **Process Data**: Modern API-only processing
+   - Database reconciliation via SQLite Cloud API
+   - AI-powered data validation
+   - Supabase entry via REST API (no web automation)
 
-3. **Send Report**: Uses `charles@parmarcharles.com` (OAuth 2.0)
-   - Drafts fitness report
-   - Evaluates email quality
-   - Sends final email via Gmail API
+3. **Generate Report**: Modern LLM-powered content generation
+   - Baseline data retrieval from SQLite Cloud
+   - AI-powered email body generation
+   - Quality evaluation with feedback loop
+
+4. **Send Report**: Uses `charles@parmarcharles.com` (OAuth 2.0)
+   - Sends professional reports with Excel attachments
+   - Gmail API integration (no SMTP)
+   - Enterprise-grade delivery
 
 ## Troubleshooting
 
@@ -153,3 +158,18 @@ To verify setup:
 2. **Reliability**: Independent authentication methods
 3. **Flexibility**: Different domains for different purposes
 4. **Scalability**: Easier to manage different access levels
+
+## v4.0.0 Modernization
+
+**Legacy Components Removed:**
+- ❌ Selenium web automation for Supabase login
+- ❌ Browser-based report generation
+- ❌ Legacy SUPABASE_URL, SUPABASE_EMAIL, SUPABASE_PASSWORD
+
+**Modern API-Only Architecture:**
+- ✅ Direct REST API calls to Supabase
+- ✅ SQLite Cloud API for data retrieval
+- ✅ LLM-powered content generation
+- ✅ Clean, maintainable codebase
+- ✅ Faster execution (no browser overhead)
+- ✅ Better error handling and reliability

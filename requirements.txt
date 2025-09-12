@@ -18,7 +18,7 @@ pandas>=2.0.0
 openpyxl>=3.1.0
 # New agent dependencies
 openai>=1.0.0
-selenium>=4.15.0
+# selenium>=4.15.0  # REMOVED: No longer needed after modernization
 sqlitecloud>=0.0.84
 # MCP Server dependencies for Brave browser
 mcp>=1.0.0
