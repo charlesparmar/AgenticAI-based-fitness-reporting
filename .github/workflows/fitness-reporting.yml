@@ -2,7 +2,7 @@ name: Fitness Reporting Workflow
 
 on:
   # Scheduled runs - configurable via cron
-  schedule:
+  #schedule:
     # Default: Run daily at 5:00 PM London time (UTC+0/UTC+1)
     # You can modify this cron expression to change frequency
     # Examples:
@@ -12,8 +12,8 @@ on:
     # - cron: '0 17 * * 1'    # Every Monday at 5:00 PM London time
     # - cron: '0 17 1,15 * *' # 1st and 15th of each month at 5:00 PM London time
     # - cron: '0 */6 * * *'   # Every 6 hours
-    # - cron: '0 9-18/2 * * 1-5' # Every 2 hours during business hours (9 AM - 6 PM London time, weekdays)
-    - cron: '30 19 * * *'
+    # - cron: '0 9-22/3 * * 1-5' # Every 3 hours between 9 AM - 10 PM London time, weekdays
+    #- cron: '30 19 * * *'
   
   # Manual trigger with inputs
   workflow_dispatch:
@@ -77,11 +77,14 @@ jobs:
     - name: Create credentials files
       run: |
         # Create credentials.json from secret
-        echo '${{ secrets.GMAIL_CREDENTIALS }}' > credentials.json
+        echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
         
         # Create token.json from secret (ensure proper JSON formatting)
-        echo '${{ secrets.GMAIL_TOKEN }}' > token.json
-        
+        echo '${{ secrets.GOOGLE_TOKEN_JSON }}' > token.json
+
+        # create token_sender.json from secret
+        echo '${{ secrets.GOOGLE_TOKEN_SENDER_JSON }}' > token_sender.json
+
         # Verify files exist and have content
         ls -la credentials.json token.json
         echo "Credentials file size: $(wc -c < credentials.json) bytes"
@@ -106,8 +109,11 @@ jobs:
     - name: Set environment variables
       run: |
         # Core configuration
+        echo "GMAIL_FETCHER_ADDRESS=${{ secrets.GMAIL_FETCHER_ADDRESS }}" >> $GITHUB_ENV
+        echo "GMAIL_FETCHER_APP_PASSWORD=${{ secrets.GMAIL_FETCHER_APP_PASSWORD }}" >> $GITHUB_ENV
         echo "GMAIL_ADDRESS=${{ secrets.GMAIL_ADDRESS }}" >> $GITHUB_ENV
-        echo "GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD }}" >> $GITHUB_ENV
+        echo "GMAIL_API_CREDENTIALS_PATH=${{ secrets.GMAIL_API_CREDENTIALS_PATH }}" >> $GITHUB_ENV
+        echo "GMAIL_API_TOKEN_PATH=${{ secrets.GMAIL_API_TOKEN_PATH }}" >> $GITHUB_ENV
         echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
         echo "ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" >> $GITHUB_ENV
         echo "GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}" >> $GITHUB_ENV
