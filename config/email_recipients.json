@@ -20,8 +20,8 @@
     }
   ],
   "config": {
-    "primary_recipient": "coach@example.com",
-    "cc_recipients": ["assistant@example.com"],
+    "primary_recipient": "charles@parmarcharles.com",
+    "cc_recipients": ["charlesparmar@gmail.com"],
     "subject_prefix": "Charles Parmar : Progress Report",
     "reply_to": null,
     "send_notifications": true
