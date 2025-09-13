@@ -135,27 +135,27 @@ class LatestEmailFetcher:
         return data
     
     def _parse_measurements_strategy_1(self, body: str) -> Dict[str, Any]:
-        """Strategy 1: Standard colon-separated format"""
+        """Strategy 1: Standard colon-separated format with precise patterns"""
         print("🔍 DEBUG: Trying Strategy 1 - Standard colon format")
         
         measurement_patterns = {
-            'Week Number': r'\bWeek Number\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
-            'Weight': r'\bWeight\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
-            'Fat Percentage': r'\bFat Percentage\b[\s\t]*[:|\t][\s\t]*(\.?\d+(?:\.\d+)?)',
-            'Bmi': r'\bBmi\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
-            'Fat Weight': r'\bFat Weight\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
-            'Lean Weight': r'\bLean Weight\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
-            'Neck': r'\bNeck\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
-            'Shoulders': r'\bShoulders\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
-            'Biceps': r'\bBiceps\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
-            'Forearms': r'\bForearms\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
-            'Chest': r'\bChest\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
-            'Above Navel': r'\bAbove Navel\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
-            'Navel': r'\bNavel\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
-            'Waist': r'\bWaist\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
-            'Hips': r'\bHips\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
-            'Thighs': r'\bThighs\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)',
-            'Calves': r'\bCalves\b[\s\t]*[:|\t][\s\t]*(\d+(?:\.\d+)?)'
+            'Week Number': r'\bWeek\s+Number\b[\s\t]*[:=][\s\t]*(\d+(?:\.\d+)?)',
+            'Weight': r'(?<!Fat\s)(?<!Lean\s)\bWeight\b[\s\t]*[:=][\s\t]*(\d+(?:\.\d+)?)',
+            'Fat Percentage': r'\bFat\s+Percentage\b[\s\t]*[:=][\s\t]*(\.?\d+(?:\.\d+)?)',
+            'Bmi': r'\bBmi\b[\s\t]*[:=][\s\t]*(\d+(?:\.\d+)?)',
+            'Fat Weight': r'\bFat\s+Weight\b[\s\t]*[:=][\s\t]*(\d+(?:\.\d+)?)',
+            'Lean Weight': r'\bLean\s+Weight\b[\s\t]*[:=][\s\t]*(\d+(?:\.\d+)?)',
+            'Neck': r'\bNeck\b[\s\t]*[:=][\s\t]*(\d+(?:\.\d+)?)',
+            'Shoulders': r'\bShoulders\b[\s\t]*[:=][\s\t]*(\d+(?:\.\d+)?)',
+            'Biceps': r'\bBiceps\b[\s\t]*[:=][\s\t]*(\d+(?:\.\d+)?)',
+            'Forearms': r'\bForearms\b[\s\t]*[:=][\s\t]*(\d+(?:\.\d+)?)',
+            'Chest': r'\bChest\b[\s\t]*[:=][\s\t]*(\d+(?:\.\d+)?)',
+            'Above Navel': r'\bAbove\s+Navel\b[\s\t]*[:=][\s\t]*(\d+(?:\.\d+)?)',
+            'Navel': r'(?<!Above\s)\bNavel\b[\s\t]*[:=][\s\t]*(\d+(?:\.\d+)?)',
+            'Waist': r'\bWaist\b[\s\t]*[:=][\s\t]*(\d+(?:\.\d+)?)',
+            'Hips': r'\bHips\b[\s\t]*[:=][\s\t]*(\d+(?:\.\d+)?)',
+            'Thighs': r'\bThighs\b[\s\t]*[:=][\s\t]*(\d+(?:\.\d+)?)',
+            'Calves': r'\bCalves\b[\s\t]*[:=][\s\t]*(\d+(?:\.\d+)?)'
         }
         
         return self._extract_measurements_with_patterns(body, measurement_patterns)
@@ -168,6 +168,27 @@ class LatestEmailFetcher:
         lines = body.split('\n')
         measurements = {}
         
+        # Define measurement patterns in order of specificity (most specific first)
+        measurement_specs = [
+            ('Week Number', r'\bWeek\s+Number\b'),
+            ('Fat Percentage', r'\bFat\s+Percentage\b'),
+            ('Fat Weight', r'\bFat\s+Weight\b'),
+            ('Lean Weight', r'\bLean\s+Weight\b'),
+            ('Above Navel', r'\bAbove\s+Navel\b'),
+            ('Weight', r'(?<!Fat\s)(?<!Lean\s)\bWeight\b'),  # Must come after Fat/Lean Weight
+            ('Bmi', r'\bBmi\b'),
+            ('Neck', r'\bNeck\b'),
+            ('Shoulders', r'\bShoulders\b'),
+            ('Biceps', r'\bBiceps\b'),
+            ('Forearms', r'\bForearms\b'),
+            ('Chest', r'\bChest\b'),
+            ('Navel', r'(?<!Above\s)\bNavel\b'),  # Must come after Above Navel
+            ('Waist', r'\bWaist\b'),
+            ('Hips', r'\bHips\b'),
+            ('Thighs', r'\bThighs\b'),
+            ('Calves', r'\bCalves\b')
+        ]
+        
         # Find the measurements section
         in_measurements = False
         for line in lines:
@@ -177,13 +198,13 @@ class LatestEmailFetcher:
                 continue
             
             if in_measurements and line:
-                # Try to parse as "Name: Value" or "Name\tValue"
-                for measurement_name in ['Week Number', 'Weight', 'Fat Percentage', 'Bmi', 'Fat Weight', 
-                                       'Lean Weight', 'Neck', 'Shoulders', 'Biceps', 'Forearms', 
-                                       'Chest', 'Above Navel', 'Navel', 'Waist', 'Hips', 'Thighs', 'Calves']:
-                    if measurement_name.lower() in line.lower():
-                        # Extract value after the measurement name
-                        value_match = re.search(rf'{re.escape(measurement_name)}[\s\t]*[:|\t][\s\t]*([\d.]+)', line, re.IGNORECASE)
+                # Try to parse each measurement in order of specificity
+                for measurement_name, pattern in measurement_specs:
+                    if re.search(pattern, line, re.IGNORECASE):
+                        # Extract value after the measurement name using flexible pattern
+                        # Support both colon/equals and whitespace separators
+                        value_pattern = rf'{pattern}[\s\t]*(?:[:=][\s\t]*|[\s\t]+)([\d.]+)'
+                        value_match = re.search(value_pattern, line, re.IGNORECASE)
                         if value_match:
                             value = value_match.group(1)
                             try:
@@ -193,7 +214,7 @@ class LatestEmailFetcher:
                                     measurements[measurement_name] = int(value)
                             except ValueError:
                                 measurements[measurement_name] = value
-                            break
+                            break  # Stop after first match to avoid duplicate processing
         
         return measurements
     
@@ -203,6 +224,27 @@ class LatestEmailFetcher:
         
         # Look for HTML table structure
         measurements = {}
+        
+        # Define measurement specs in order of specificity (most specific first)
+        measurement_specs = [
+            ('Week Number', ['week number', 'weeknumber']),
+            ('Fat Percentage', ['fat percentage', 'fatpercentage']),
+            ('Fat Weight', ['fat weight', 'fatweight']),
+            ('Lean Weight', ['lean weight', 'leanweight']),
+            ('Above Navel', ['above navel', 'abovenavel']),
+            ('Weight', ['weight']),  # Must come after Fat/Lean Weight
+            ('Bmi', ['bmi', 'b.m.i']),
+            ('Neck', ['neck']),
+            ('Shoulders', ['shoulders']),
+            ('Biceps', ['biceps']),
+            ('Forearms', ['forearms']),
+            ('Chest', ['chest']),
+            ('Navel', ['navel']),  # Must come after Above Navel
+            ('Waist', ['waist']),
+            ('Hips', ['hips']),
+            ('Thighs', ['thighs']),
+            ('Calves', ['calves'])
+        ]
         
         # Extract from HTML table rows
         table_row_pattern = r'<tr[^>]*>(.*?)</tr>'
@@ -214,26 +256,40 @@ class LatestEmailFetcher:
             cells = re.findall(cell_pattern, row, re.DOTALL | re.IGNORECASE)
             
             if len(cells) >= 2:
-                measurement_name = re.sub(r'<[^>]+>', '', cells[0]).strip()
+                measurement_name = re.sub(r'<[^>]+>', '', cells[0]).strip().lower()
                 value_text = re.sub(r'<[^>]+>', '', cells[1]).strip()
                 
-                # Check if this is a known measurement
-                for known_name in ['Week Number', 'Weight', 'Fat Percentage', 'Bmi', 'Fat Weight', 
-                                 'Lean Weight', 'Neck', 'Shoulders', 'Biceps', 'Forearms', 
-                                 'Chest', 'Above Navel', 'Navel', 'Waist', 'Hips', 'Thighs', 'Calves']:
-                    if known_name.lower() in measurement_name.lower():
-                        # Extract numeric value
-                        value_match = re.search(r'([\d.]+)', value_text)
-                        if value_match:
-                            value = value_match.group(1)
-                            try:
-                                if '.' in value:
-                                    measurements[known_name] = float(value)
-                                else:
-                                    measurements[known_name] = int(value)
-                            except ValueError:
-                                measurements[known_name] = value
-                        break
+                # Check measurements in order of specificity
+                for known_name, aliases in measurement_specs:
+                    match_found = False
+                    for alias in aliases:
+                        if alias in measurement_name:
+                            # Special handling for Weight to avoid Fat Weight/Lean Weight conflicts
+                            if known_name == 'Weight':
+                                if 'fat' in measurement_name or 'lean' in measurement_name:
+                                    continue  # Skip, this should match Fat Weight or Lean Weight
+                            
+                            # Special handling for Navel to avoid Above Navel conflicts
+                            if known_name == 'Navel':
+                                if 'above' in measurement_name:
+                                    continue  # Skip, this should match Above Navel
+                            
+                            # Extract numeric value
+                            value_match = re.search(r'([\d.]+)', value_text)
+                            if value_match:
+                                value = value_match.group(1)
+                                try:
+                                    if '.' in value:
+                                        measurements[known_name] = float(value)
+                                    else:
+                                        measurements[known_name] = int(value)
+                                except ValueError:
+                                    measurements[known_name] = value
+                                match_found = True
+                                break
+                    
+                    if match_found:
+                        break  # Stop after first successful match
         
         return measurements
     
@@ -243,29 +299,29 @@ class LatestEmailFetcher:
         
         measurements = {}
         
-        # More flexible patterns that don't require specific formatting
+        # More flexible patterns in order of specificity (most specific first)
         flexible_patterns = {
-            'Week Number': r'week\s*number[^\d]*(\d+(?:\.\d+)?)',
-            'Weight': r'weight[^\d]*(\d+(?:\.\d+)?)',
-            'Fat Percentage': r'fat\s*percentage[^\d]*(\.?\d+(?:\.\d+)?)',
+            'Week Number': r'week\s+number[^\d]*(\d+(?:\.\d+)?)',
+            'Fat Percentage': r'fat\s+percentage[^\d]*(\.?\d+(?:\.\d+)?)',
+            'Fat Weight': r'fat\s+weight[^\d]*(\d+(?:\.\d+)?)',
+            'Lean Weight': r'lean\s+weight[^\d]*(\d+(?:\.\d+)?)',
+            'Above Navel': r'above\s+navel[^\d]*(\d+(?:\.\d+)?)',
+            'Weight': r'(?<!fat\s)(?<!lean\s)weight[^\d]*(\d+(?:\.\d+)?)',  # Must come after Fat/Lean Weight
             'Bmi': r'bmi[^\d]*(\d+(?:\.\d+)?)',
-            'Fat Weight': r'fat\s*weight[^\d]*(\d+(?:\.\d+)?)',
-            'Lean Weight': r'lean\s*weight[^\d]*(\d+(?:\.\d+)?)',
             'Neck': r'neck[^\d]*(\d+(?:\.\d+)?)',
             'Shoulders': r'shoulders[^\d]*(\d+(?:\.\d+)?)',
             'Biceps': r'biceps[^\d]*(\d+(?:\.\d+)?)',
             'Forearms': r'forearms[^\d]*(\d+(?:\.\d+)?)',
             'Chest': r'chest[^\d]*(\d+(?:\.\d+)?)',
-            'Above Navel': r'above\s*navel[^\d]*(\d+(?:\.\d+)?)',
-            'Navel': r'navel[^\d]*(\d+(?:\.\d+)?)',
+            'Navel': r'(?<!above\s)navel[^\d]*(\d+(?:\.\d+)?)',  # Must come after Above Navel
             'Waist': r'waist[^\d]*(\d+(?:\.\d+)?)',
             'Hips': r'hips[^\d]*(\d+(?:\.\d+)?)',
             'Thighs': r'thighs[^\d]*(\d+(?:\.\d+)?)',
             'Calves': r'calves[^\d]*(\d+(?:\.\d+)?)'
         }
         
-        # Special handling for Fat Percentage in flexible patterns
-        measurements = self._extract_measurements_with_patterns(body, flexible_patterns)
+        # Use improved extraction method that processes in order
+        measurements = self._extract_measurements_with_ordered_patterns(body, flexible_patterns)
         
         # Fix Fat Percentage if it was parsed incorrectly
         if 'Fat Percentage' in measurements:
@@ -274,6 +330,38 @@ class LatestEmailFetcher:
                 # This is likely a decimal value that was parsed as integer
                 measurements['Fat Percentage'] = fat_pct / 1000.0  # Convert 514 to 0.514
                 print(f"🔍 DEBUG: Fixed Fat Percentage from {fat_pct} to {measurements['Fat Percentage']}")
+        
+        return measurements
+    
+    def _extract_measurements_with_ordered_patterns(self, body: str, patterns: Dict[str, str]) -> Dict[str, Any]:
+        """Extract measurements using provided patterns in order (for Strategy 4)"""
+        measurements = {}
+        processed_body = body
+        
+        # Process patterns in the order they were defined
+        for measurement_name, pattern in patterns.items():
+            match = re.search(pattern, processed_body, re.IGNORECASE)
+            if match:
+                value = match.group(1)
+                
+                # Special handling for Fat Percentage to ensure proper decimal conversion
+                if measurement_name == 'Fat Percentage' and value.startswith('.'):
+                    value = '0' + value
+                
+                try:
+                    if '.' in value:
+                        measurements[measurement_name] = float(value)
+                    else:
+                        measurements[measurement_name] = int(value)
+                except ValueError:
+                    measurements[measurement_name] = value
+                
+                # Debug logging for critical measurements
+                if measurement_name in ['Navel', 'Above Navel', 'Fat Percentage', 'Weight', 'Fat Weight', 'Lean Weight']:
+                    print(f"🔍 DEBUG: Found {measurement_name} = {value} -> {measurements[measurement_name]}")
+                
+                # Remove the matched text to prevent re-matching
+                processed_body = processed_body[:match.start()] + processed_body[match.end():]
         
         return measurements
     
@@ -323,8 +411,8 @@ class LatestEmailFetcher:
                 r'(?:Week|Wk)\s*#?\s*(\d+(?:\.\d+)?)'
             ],
             'Weight': [
-                r'Weight\s*[:=]\s*(\d+(?:\.\d+)?)',
-                r'Weight\s+(\d+(?:\.\d+)?)',
+                r'(?<!Fat\s)(?<!Lean\s)Weight\s*[:=]\s*(\d+(?:\.\d+)?)',
+                r'(?<!Fat\s)(?<!Lean\s)Weight\s+(\d+(?:\.\d+)?)',
                 r'Body\s+Weight\s*[:=]?\s*(\d+(?:\.\d+)?)'
             ],
             'Fat Percentage': [

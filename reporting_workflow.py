@@ -300,7 +300,7 @@ def create_reporting_workflow():
         reconciliation_result = state.get("reconciliation_result")
         email_data = state.get("email_data")
         
-        if reconciliation_result and not reconciliation_result.get('data_exists') and email_data:
+        if reconciliation_result and reconciliation_result.get('data_matches') and reconciliation_result.get('proceed_to_validation') and email_data:
             print("🔄 Starting data validation process...")
             
             # Create a temporary file with the email data using tempfile
@@ -334,7 +334,7 @@ def create_reporting_workflow():
                     pass
                 return state
         else:
-            print("❌ Validation skipped - data already exists or reconciliation failed")
+            print("❌ Validation skipped - reconciliation failed or data doesn't match")
             return state
     
     def supabase_entry_node(state):
@@ -722,10 +722,8 @@ def run_reporting_workflow():
                         if 'reconciliation_result' in result:
                             reconciliation_result = result['reconciliation_result']
                             if reconciliation_result:
-                                if reconciliation_result.get('data_exists'):
-                                    print("✅ Data already exists - workflow ended")
-                                else:
-                                    print("✅ Data reconciled and database updated!")
+                                if reconciliation_result.get('data_matches'):
+                                    print("✅ Reconciliation successful - both fetchers extracted identical data")
                                     
                                     # Check validation result
                                     if 'validation_result' in result:
@@ -801,6 +799,9 @@ def run_reporting_workflow():
                                             print("❌ Validation failed")
                                     else:
                                         print("✅ Workflow completed without validation")
+                                else:
+                                    print("❌ Reconciliation failed - fetcher agents extracted different data")
+                                    print("🛑 Workflow terminated due to data mismatch between fetchers")
                             else:
                                 print(f"❌ Reconciliation failed: {reconciliation_result.get('error') if reconciliation_result else 'No result'}")
                         else:
