@@ -8,6 +8,7 @@ import os
 import json
 import pandas as pd
 import requests
+import sqlitecloud
 from datetime import datetime
 from dotenv import load_dotenv
 from google.auth.transport.requests import Request
@@ -87,6 +88,10 @@ class FinalEmailAgent:
         self.credentials_path = os.getenv('GOOGLE_CREDENTIALS_JSON', 'credentials.json')
         self.token_path = os.getenv('GOOGLE_TOKEN_JSON', 'token.json')
         self.email_address = os.getenv('GMAIL_ADDRESS')
+        
+        # SQLite Cloud configuration for database logging
+        self.sqlite_api_key = os.getenv("SQLITE_API_KEY")
+        self.connection_string = f"sqlitecloud://ccbfw4dwnk.g3.sqlite.cloud:8860/fitness_data.db?apikey={self.sqlite_api_key}"
         
         # Use new email configuration system
         self.coach_email = get_email_to()
@@ -212,6 +217,55 @@ class FinalEmailAgent:
             print(f"❌ Error creating final email body: {e}")
             return original_body
     
+    def save_email_report(self, email_data):
+        """Save email report metadata and content to report_sent table"""
+        try:
+            if not self.sqlite_api_key:
+                print("⚠️ SQLite API key not configured - skipping database save")
+                return False
+            
+            # Connect to SQLite Cloud
+            conn = sqlitecloud.connect(self.connection_string)
+            cursor = conn.cursor()
+            
+            # Prepare data for insertion
+            insert_query = """
+                INSERT INTO report_sent (
+                    date_sent, from_email, to_email, cc_emails, sent_datetime, 
+                    email_body, subject, message_id, excel_attached, iteration_count
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            
+            # Extract data
+            date_sent = datetime.now().date()
+            sent_datetime = datetime.now()
+            cc_emails_str = ', '.join(email_data.get('cc_emails', [])) if email_data.get('cc_emails') else None
+            
+            # Execute insert
+            cursor.execute(insert_query, (
+                date_sent,
+                email_data.get('from_email', self.email_address),
+                email_data.get('to_email'),
+                cc_emails_str,
+                sent_datetime,
+                email_data.get('email_body'),
+                email_data.get('subject'),
+                email_data.get('message_id'),
+                email_data.get('excel_attached', False),
+                email_data.get('iteration_count', 1)
+            ))
+            
+            # Commit and close
+            conn.commit()
+            conn.close()
+            
+            print("✅ Email report saved to database successfully")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error saving email report to database: {e}")
+            return False
+    
     def create_message_with_attachment(self, to_email, subject, body, attachment_path=None, cc_emails=None):
         """Create a Gmail message with optional attachment and CC"""
         try:
@@ -293,6 +347,19 @@ class FinalEmailAgent:
             print(f"   Subject: {subject}")
             print(f"   Message ID: {sent_message['id']}")
             print(f"   Excel attachment: {'Yes' if excel_path else 'No'}")
+            
+            # Save email report to database
+            email_report_data = {
+                'from_email': self.email_address,
+                'to_email': self.coach_email,
+                'cc_emails': self.cc_recipients,
+                'email_body': final_body,
+                'subject': subject,
+                'message_id': sent_message['id'],
+                'excel_attached': excel_path is not None,
+                'iteration_count': iteration_count
+            }
+            self.save_email_report(email_report_data)
             
             # Send push notification after successful email
             try:
