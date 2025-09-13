@@ -1,19 +1,19 @@
 {
   "recipients": [
     {
-      "email": "coach@example.com",
+      "email": "charles@parmarcharles.com",
       "name": "Primary Coach",
       "role": "coach",
       "active": true
     },
     {
-      "email": "assistant@example.com",
+      "email": "charlesparmar@gmail.com",
       "name": "Assistant Coach",
       "role": "cc",
       "active": true
     },
     {
-      "email": "nutritionist@example.com",
+      "email": "charlesparmar@gmail.com",
       "name": "Nutrition Specialist",
       "role": "cc",
       "active": false
