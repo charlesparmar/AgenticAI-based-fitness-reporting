@@ -86,7 +86,7 @@ class FinalEmailAgent:
         self.service = None
         self.credentials_path = os.getenv('GOOGLE_CREDENTIALS_JSON', 'credentials.json')
         self.token_path = os.getenv('GOOGLE_TOKEN_JSON', 'token.json')
-        self.email_address = os.getenv('GMAIL_SENDER_ADDRESS')
+        self.email_address = os.getenv('GMAIL_ADDRESS')
         
         # Use new email configuration system
         self.coach_email = get_email_to()
