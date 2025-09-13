@@ -55,7 +55,15 @@ Thumbs.db
 
 # Temporary files
 *.tmp
-*.temp Web Demo/node_modules/
-chroma_db/
+*.temp
+
+# Node modules
+node_modules/
+Web Demo/node_modules/
 langgraph-workflow-ui/node_modules/
+
+# Database files
+chroma_db/
+
+# Sensitive tokens
 token_sender.json
