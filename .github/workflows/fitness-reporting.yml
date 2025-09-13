@@ -112,8 +112,8 @@ jobs:
         echo "GMAIL_FETCHER_ADDRESS=${{ secrets.GMAIL_FETCHER_ADDRESS }}" >> $GITHUB_ENV
         echo "GMAIL_FETCHER_APP_PASSWORD=${{ secrets.GMAIL_FETCHER_APP_PASSWORD }}" >> $GITHUB_ENV
         echo "GMAIL_ADDRESS=${{ secrets.GMAIL_ADDRESS }}" >> $GITHUB_ENV
-        echo "GMAIL_API_CREDENTIALS_PATH=${{ secrets.GMAIL_API_CREDENTIALS_PATH }}" >> $GITHUB_ENV
-        echo "GMAIL_API_TOKEN_PATH=${{ secrets.GMAIL_API_TOKEN_PATH }}" >> $GITHUB_ENV
+        echo "GMAIL_API_CREDENTIALS_PATH=credentials.json" >> $GITHUB_ENV
+        echo "GMAIL_API_TOKEN_PATH=token.json" >> $GITHUB_ENV
         echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
         echo "ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" >> $GITHUB_ENV
         echo "GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}" >> $GITHUB_ENV
