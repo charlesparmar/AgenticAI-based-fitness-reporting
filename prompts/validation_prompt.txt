@@ -17,10 +17,10 @@ ANALYSIS TASK:
 VALIDATION CRITERIA:
 - Weight should be between 30-300 kg (reasonable human range). Change should be reasonable and not have extreme jumps.
 - Body measurements should be proportional and realistic. Change should be reasonable and not have extreme jumps.
-- Fat percentage should be between 2-50% (reasonable range). 
+- Change in the Fat percentage should be between 0.5-5%. This much change is acceptable.  
 - Compare fat percentage with fat percentage only for any anomalies and do not compare fat percentage with any other field. Please use this logic for each and every field. Compare the trend for each field seperately and do not cross compare different fields e.g. do not compare fat percentage with weight and likewise. 
 - All measurements should be positive numbers or zero at the least. Measurements cannot be negative.
-- If data suggest extreme obesity levels than that is perfectly fine. 
+- If data suggest extreme obesity levels than that is perfectly fine.
 - Also if the fat weight and lean weight do not completely align with fat percentage then please assume this to be completely ok.
 - Changes should be reasonable (not extreme jumps in short periods). This point is very important.
 - Please completely ignore the week number field. This is not relevant at all for the validation. 

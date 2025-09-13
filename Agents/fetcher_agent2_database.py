@@ -29,10 +29,10 @@ class DatabaseFetcher:
             conn = sqlitecloud.connect(self.connection_string)
             cursor = conn.cursor()
             
-            # Query to get the latest entry from fitness_measurements table
+            # Query to get the latest entry from Charles_Parmar_Fitness_measurements table
             query = """
-            SELECT * FROM fitness_measurements 
-            ORDER BY created_at DESC 
+            SELECT * FROM Charles_Parmar_Fitness_measurements 
+            ORDER BY created_at DESC
             LIMIT 1
             """
             
@@ -135,7 +135,7 @@ class DatabaseFetcher:
                     'measurements': {
                         'Week Number': db_entry.get('week_number'),
                         'Weight': db_entry.get('weight'),
-                        'Fat Percentage': db_entry.get('fat_percentage'),
+                        'Fat Percentage': db_entry.get('fat_percent'),
                         'Bmi': db_entry.get('bmi'),
                         'Fat Weight': db_entry.get('fat_weight'),
                         'Lean Weight': db_entry.get('lean_weight'),
@@ -177,7 +177,7 @@ def run_database_fetcher():
             print("✅ Successfully fetched latest database entry:")
             print(f"Week number: {db_entry.get('week_number')}")
             print(f"Weight: {db_entry.get('weight')}")
-            print(f"Fat percentage: {db_entry.get('fat_percentage')}")
+            print(f"Fat percentage: {db_entry.get('fat_percent')}")
             print(f"BMI: {db_entry.get('bmi')}")
             print(f"Created at: {db_entry.get('created_at')}")
             

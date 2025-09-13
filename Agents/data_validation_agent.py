@@ -23,7 +23,7 @@ class DataValidationAgent:
     def __init__(self):
         self.sqlite_api_key = os.getenv("SQLITE_API_KEY")
         self.sqlite_db_url = os.getenv("SQLITE_DB_URL")
-        self.sqlite_table_name = os.getenv("SQLITE_TABLE_NAME", "fitness_measurements")
+        self.sqlite_table_name = os.getenv("SQLITE_TABLE_NAME", "Charles_Parmar_Fitness_measurements")
         self.pushover_token = os.getenv("PUSHOVER_TOKEN")
         self.pushover_user_key = os.getenv("PUSHOVER_USER_KEY")
         

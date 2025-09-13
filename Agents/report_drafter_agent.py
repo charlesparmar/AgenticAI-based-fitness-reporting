@@ -69,7 +69,7 @@ class ModernReportDrafterAgent:
         if not self.sqlite_api_key:
             raise ValueError("SQLITE_API_KEY must be set in .env file")
         
-        self.connection_string = f"sqlitecloud://clyqxnxkk001q08kz0ojs9eae.sqlite.cloud:8860/fitness?apikey={self.sqlite_api_key}"
+        self.connection_string = f"sqlitecloud://ccbfw4dwnk.g3.sqlite.cloud:8860/fitness_data.db?apikey={self.sqlite_api_key}"
         
         # Pushover notifier
         self.notifier = PushoverNotifier()
@@ -85,9 +85,9 @@ class ModernReportDrafterAgent:
             
             # Get week 0 data (baseline)
             cursor.execute("""
-                SELECT * FROM fitness_measurements 
+                SELECT * FROM Charles_Parmar_Fitness_measurements 
                 WHERE week_number = 0 
-                ORDER BY created_at DESC 
+                ORDER BY created_at DESC
                 LIMIT 1
             """)
             
