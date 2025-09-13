@@ -30,8 +30,8 @@ try:
     from config.email_config import email_config, get_email_to, get_email_cc, get_email_bcc
 except ImportError:
     print("⚠️ Warning: Email configuration module not found, using fallback configuration")
-    def get_email_to(): return os.getenv('EMAIL_TO', 'coach@example.com')
-    def get_email_cc(): return []
+    def get_email_to(): return os.getenv('EMAIL_TO', 'charles@parmarcharles.com')
+    def get_email_cc(): return ['charlesparmar@gmail.com']
     def get_email_bcc(): return []
 
 # Gmail API scopes
@@ -84,9 +84,9 @@ class FinalEmailAgent:
     def __init__(self):
         """Initialize the Final Email Agent"""
         self.service = None
-        self.credentials_path = os.getenv('GMAIL_API_CREDENTIALS_PATH', 'credentials.json')
-        self.token_path = os.getenv('GMAIL_API_TOKEN_PATH', 'token.json')
-        self.email_address = os.getenv('GMAIL_ADDRESS')
+        self.credentials_path = os.getenv('GOOGLE_CREDENTIALS_JSON', 'credentials.json')
+        self.token_path = os.getenv('GOOGLE_TOKEN_JSON', 'token.json')
+        self.email_address = os.getenv('GMAIL_SENDER_ADDRESS')
         
         # Use new email configuration system
         self.coach_email = get_email_to()
