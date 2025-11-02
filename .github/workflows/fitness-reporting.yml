@@ -128,13 +128,13 @@ jobs:
         echo "LANGSMITH_API_KEY=${{ secrets.LANGSMITH_API_KEY }}" >> $GITHUB_ENV
         echo "LANGSMITH_PROJECT=${{ secrets.LANGSMITH_PROJECT }}" >> $GITHUB_ENV
         
-        # LLM Model Configuration for Multi-Model Setup
-        echo "LLM_PROVIDER_1=openai" >> $GITHUB_ENV
-        echo "LLM_MODEL_1=gpt-4o-mini" >> $GITHUB_ENV
-        echo "LLM_PROVIDER_2=anthropic" >> $GITHUB_ENV
-        echo "LLM_MODEL_2=claude-3-5-sonnet-20241022" >> $GITHUB_ENV
-        echo "LLM_PROVIDER_3=google" >> $GITHUB_ENV
-        echo "LLM_MODEL_3=gemini-1.5-flash" >> $GITHUB_ENV
+        # LLM Model Configuration from Secrets
+        echo "LLM_PROVIDER_1=${{ secrets.LLM_PROVIDER_1 }}" >> $GITHUB_ENV
+        echo "LLM_MODEL_1=${{ secrets.LLM_MODEL_1 }}" >> $GITHUB_ENV
+        echo "LLM_PROVIDER_2=${{ secrets.LLM_PROVIDER_2 }}" >> $GITHUB_ENV
+        echo "LLM_MODEL_2=${{ secrets.LLM_MODEL_2 }}" >> $GITHUB_ENV
+        echo "LLM_PROVIDER_3=${{ secrets.LLM_PROVIDER_3 }}" >> $GITHUB_ENV
+        echo "LLM_MODEL_3=${{ secrets.LLM_MODEL_3 }}" >> $GITHUB_ENV
         
         # Email configuration - use secrets or workflow inputs
         if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.custom_email_to }}" ]; then
