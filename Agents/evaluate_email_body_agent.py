@@ -17,7 +17,7 @@ class EvaluateEmailBodyAgent:
     
     def __init__(self):
         # LLM configuration using modular system
-        self.llm = llm_config.get_model(temperature=0.3)
+        self.llm = llm_config.get_model(temperature=1.0)
     
     def evaluate_email_body(self, email_body: str, baseline_data: Dict[str, Any], current_data: Dict[str, Any]) -> Dict[str, Any]:
         """Evaluate email body quality using configured LLM"""
@@ -25,7 +25,7 @@ class EvaluateEmailBodyAgent:
             print("🔍 Evaluating email body quality...")
             
             # Get the model for this specific prompt
-            model = prompt_loader.get_model_for_prompt("email_evaluation_prompt", temperature=0.3)
+            model = prompt_loader.get_model_for_prompt("email_evaluation_prompt", temperature=1.0)
             
             # Load and format the evaluation prompt
             prompt = prompt_loader.format_prompt(

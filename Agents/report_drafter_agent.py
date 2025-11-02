@@ -118,7 +118,7 @@ class ModernReportDrafterAgent:
             feedback_section = f"Previous feedback to address: {feedback}" if feedback else ""
             
             # Get the model for this specific prompt
-            model = prompt_loader.get_model_for_prompt("report_drafting_prompt", temperature=0.7)
+            model = prompt_loader.get_model_for_prompt("report_drafting_prompt", temperature=1.0)
             
             # Load and format the prompt
             prompt = prompt_loader.format_prompt(

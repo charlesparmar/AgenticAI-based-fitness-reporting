@@ -20,29 +20,29 @@ class EnvironmentConfig:
         return {
             "development": {
                 "llm_provider": "openai",
-                "llm_model": "gpt-4o-mini",
-                "llm_temperature": 0.0,
+                "llm_model": "gpt-5-mini-2025-08-07",
+                #"llm_temperature": 0.0,
                 "debug_mode": True,
                 "log_level": "DEBUG"
             },
             "staging": {
                 "llm_provider": "openai",
-                "llm_model": "gpt-4o",
-                "llm_temperature": 0.1,
+                "llm_model": "gpt-5-mini-2025-08-07",
+                #"llm_temperature": 0.1,
                 "debug_mode": True,
                 "log_level": "INFO"
             },
             "production": {
                 "llm_provider": "openai",
-                "llm_model": "gpt-4o",
-                "llm_temperature": 0.0,
+                "llm_model": "gpt-5-mini-2025-08-07",
+                #"llm_temperature": 0.0,
                 "debug_mode": False,
                 "log_level": "WARNING"
             },
             "testing": {
                 "llm_provider": "openai",
-                "llm_model": "gpt-3.5-turbo",
-                "llm_temperature": 0.0,
+                "llm_model": "gpt-5-mini-2025-08-07",
+                #"llm_temperature": 0.0,
                 "debug_mode": True,
                 "log_level": "DEBUG"
             }

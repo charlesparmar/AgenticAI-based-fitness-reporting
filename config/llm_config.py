@@ -24,16 +24,12 @@ class LLMConfig:
     # Model mappings for different providers
     MODEL_MAPPINGS = {
         ModelProvider.OPENAI: {
-            "gpt-4o": "gpt-4o",
-            "gpt-4o-mini": "gpt-4o-mini",
-            "gpt-4-turbo": "gpt-4-turbo",
-            "gpt-3.5-turbo": "gpt-3.5-turbo"
-        },
+            "gpt-5-mini-2025-08-07": "gpt-5-mini-2025-08-07",
+            },
         ModelProvider.ANTHROPIC: {
-            "claude-3-5-sonnet": "claude-3-5-sonnet-20241022",
-            "claude-3-opus": "claude-3-opus-20240229",
-            "claude-3-sonnet": "claude-3-sonnet-20240229",
-            "claude-3-haiku": "claude-3-haiku-20240307"
+            
+            "claude-sonnet-4-5": "claude-sonnet-4-5",
+            
         },
         ModelProvider.GOOGLE: {
             "gemini-1.5-pro": "gemini-1.5-pro",
@@ -45,8 +41,8 @@ class LLMConfig:
     def __init__(self):
         # Default configuration
         self.default_provider = ModelProvider.OPENAI
-        self.default_model = "gpt-4o-mini"
-        self.default_temperature = 0.0
+        self.default_model = "gpt-5-mini-2025-08-07"
+        self.default_temperature = 1.0
         
         # Load from environment variables
         self._load_from_env()

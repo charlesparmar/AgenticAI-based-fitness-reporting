@@ -3,8 +3,8 @@
 # Update the model assignments below to change which model is used for each prompt
 
 # Model Definitions:
-# Model 1 = gpt-4o-mini
-# Model 2 = claude-3-5-sonnet-20241022
+# Model 1 = gpt-5-mini-2025-08-07
+# Model 2 = claude-sonnet-4-5
 # Model 3 = gemini-1.5-flash
 
 # Prompt to Model Mappings:

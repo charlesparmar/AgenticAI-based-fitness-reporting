@@ -24,6 +24,8 @@ VALIDATION CRITERIA:
 - Also if the fat weight and lean weight do not completely align with fat percentage then please assume this to be completely ok.
 - Changes should be reasonable (not extreme jumps in short periods). This point is very important.
 - Please completely ignore the week number field. This is not relevant at all for the validation. 
+- Please do not consider the date field when looking for anomaly. The user may have taken a break for some time and hence there could be a gap between last data entry in this case it will come up as new data and historical data, therefore comparing dates will not make sense. Simple look for anomalies in the weight and body measurements.
+- Please ignore the date on which the email was fetched and simply use the data that was fetched. The user could have data on a specific date and the email could be fetched after some gap of weeks, which is still ok. So ignore the date when the email was fetched. The whole objective of validation is to compare only weight and body measurements. 
 
 RESPONSE FORMAT (JSON):
 {{
