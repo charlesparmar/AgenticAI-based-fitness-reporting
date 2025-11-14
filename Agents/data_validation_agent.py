@@ -49,7 +49,7 @@ class DataValidationAgent:
             # Query to get last 4 entries
             query = f"""
             SELECT * FROM {self.sqlite_table_name} 
-            ORDER BY date DESC 
+            ORDER BY week_number DESC 
             LIMIT 4
             """
             
